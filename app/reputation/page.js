@@ -1,82 +1,54 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
-import { 
-  User, MessageSquare, Clock, Diff, Flag, 
-  Settings, Shield, Mail, Share2
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import Header from "../components/Header";
 
-export default function ReputationPage() {
- 
-  const router = useParams();
-  const { recipient } = router.query; 
-  console.log(recipient)
-  const [user, setUser] = useState(null);
+const allowedReputationChanges = {
+  user: [1, -1],
+  admin: [3, -3],
+  moderator: [2, -2],
+  // Add more roles as needed
+};
+
+export default function ReputationFormPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const recipient = searchParams.get("recipient"); // e.g., ?recipient=dumdum
+
+  const [user, setUser] = useState(null); // recipient's user data
+  const [giver, setGiver] = useState(null); // logged-in user's full data (including role)
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sessionLoading, setSessionLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("posts");
-  const [userStats, setUserStats] = useState({
-    posts: 0,
-    reputation: 0
+  const [formValues, setFormValues] = useState({
+    reputation: "",
+    message: "",
   });
-  const [avatar, setAvatar] = useState(null);
-  const [banner, setBanner] = useState(null);
-  const [userPosts, setUserPosts] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
+  // Fetch recipient user data
   useEffect(() => {
-    async function fetchUser() {
+    async function fetchRecipient() {
       try {
         const res = await fetch(`/api/getUser?username=${encodeURIComponent(recipient)}`);
         if (!res.ok) {
-          throw new Error("Failed to fetch user data.");
+          throw new Error("Failed to fetch recipient data.");
         }
         const data = await res.json();
         setUser(data);
-
-        if(data.avatar_key) {
-            const avkey = await fetch(`/api/getDownloadURL?filename=${encodeURIComponent(data.avatar_key)}`);
-            if (!avkey.ok) {
-            throw new Error(`Error fetching URL: ${avkey.status}`)
-            }
-
-            const { url: avUrl } = await avkey.json();
-            const avBlob = await fetch(avUrl).then((res) => res.blob());
-            const avObjectUrl = URL.createObjectURL(avBlob);
-            setAvatar(avObjectUrl);
-        }
-
-        if(data.banner_key) {
-            const bakey = await fetch(`/api/getDownloadURL?filename=${encodeURIComponent(data.banner_key)}`);
-            if (!bakey.ok) {
-            throw new Error(`Error fetching URL: ${bakey.status}`);
-            }
-    
-            const { url: baUrl } = await bakey.json();
-            const baBlob = await fetch(baUrl).then((res) => res.blob());
-            const baObjectUrl = URL.createObjectURL(baBlob);
-            setBanner(baObjectUrl);
-    
-            console.log(banner)
-        }
-        // You can also fetch stats in a separate request if needed
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     }
-    
     if (recipient) {
-      fetchUser();
+      fetchRecipient();
     }
   }, [recipient]);
 
-  // Fetch session data from the backend
   useEffect(() => {
     async function fetchSession() {
       try {
@@ -84,79 +56,158 @@ export default function ReputationPage() {
         if (res.ok) {
           const data = await res.json();
           setSession(data.session);
-          
         } else {
-            router.push("/")
+          router.push("/");
         }
       } catch (err) {
         console.error("Failed to fetch session:", err);
-      } finally {
-        setSessionLoading(false);
       }
     }
     fetchSession();
-  }, [recipient]);
+  }, [router]);
 
   useEffect(() => {
-    if (activeTab === "posts" && user?.username) {
-      async function fetchUserPosts() {
-        try {
-          const res = await fetch(
-            `/api/getUser/posts?username=${encodeURIComponent(user?.username)}`
-          );
-          if (!res.ok) {
-            throw new Error("Failed to fetch user posts");
-          }
-          const data = await res.json();
-          setUserPosts(data);
-        } catch (error) {
-          console.error(error)
+    async function fetchGiver() {
+      try {
+        const res = await fetch(`/api/getUser?username=${encodeURIComponent(session.username)}`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch giver data.");
         }
+        const data = await res.json();
+        setGiver(data);
+      } catch (err) {
+        setError(err.message);
       }
-      fetchUserPosts();
     }
-  }, [activeTab, user]);
-  
+    if (session && session.username) {
+      fetchGiver();
+    }
+  }, [session]);
 
-  if (loading || sessionLoading) {
+  // Prevent self-reputation submission
+  useEffect(() => {
+    if (session && recipient && session.username === recipient) {
+      setError("You cannot submit reputation for yourself.");
+    }
+  }, [session, recipient]);
+
+  const handleChange = (e) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (error) return;
+    setSubmitting(true);
+
+    const numericReputation = Number(formValues.reputation);
+    if (giver && giver.role === "user" && numericReputation !== 1 && numericReputation !== -1) {
+      setError("As a regular user, you can only submit a reputation change of +1 or -1.");
+      setSubmitting(false);
+      return;
+    } else if (giver && giver.role === "admin" && numericReputation !== 3 && numericReputation !== -3) {
+      setError("As a admin user, you can only submit a reputation change of +1 or -1.");
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/modify-reputation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient,
+          reputation: numericReputation,
+          message: formValues.message,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to submit reputation.");
+      }
+      // On success, redirect to recipient's profile page.
+      router.push(`/${recipient}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin"></div>
-          <p className="text-gray-300 mt-4">Loading profile...</p>
-        </div>
+        <p className="text-gray-300">Loading...</p>
       </div>
     );
   }
 
   if (error || !user) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 rounded-lg p-8 shadow-xl w-full max-w-md text-center">
-          <Flag className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-100 mb-2">Profile Not Found</h2>
-          <p className="text-red-400 mb-6">{error || "This user doesn't exist or has been removed."}</p>
-          <button 
-            onClick={() => router.push('/')} 
-            className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-          >
-            Return Home
-          </button>
-        </div>
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center">
+        <p className="text-red-500">{error || "User not found"}</p>
+        <Link href="/">
+          <p className="underline mt-4">Go Home</p>
+        </Link>
       </div>
     );
   }
 
-  // Check if the logged-in user is viewing their own profile
-  const isOwner = session && session.username === recipient;
-  
-  // Default avatar/banner if not set
-  const avatarSrc = avatar || "/defaultuser.png";
-  const bannerSrc = banner || "/defaultbanner.png";
-
   return (
-    <div>
-        <p>hi</p>
+    <div className="min-h-screen bg-gray-900 text-gray-100">
+      <Header session={session} />
+      <div className="max-w-3xl mx-auto p-4">
+        <h1 className="text-3xl font-bold mb-6">Submit Reputation for {recipient}</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-1">Reputation Score</label>
+          <select
+            name="reputation"
+            value={formValues.reputation}
+            onChange={handleChange}
+            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+            required
+          >
+            <option value="">Select a value</option>
+            {giver && allowedReputationChanges[giver.role] && allowedReputationChanges[giver.role].map((value, idx) => (
+              <option key={idx} value={value}>
+                {value > 0 ? `+${value}` : value}
+              </option>
+            ))}
+          </select>
+          {giver && allowedReputationChanges[giver.role] ? (
+            <p className="text-gray-400 text-sm mt-1">
+              As a <strong>{giver.role}</strong>, you can only submit a reputation change of {allowedReputationChanges[giver.role].join(" or ")}.
+            </p>
+          ) : (
+            <p className="text-gray-400 text-sm mt-1">No reputation change rules set for your role.</p>
+          )}
+        </div>
+
+          <div>
+            <label className="block mb-1">Message</label>
+            <textarea
+              name="message"
+              value={formValues.message}
+              onChange={handleChange}
+              className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+              rows={4}
+              required
+            ></textarea>
+          </div>
+          {error && <p className="text-red-500">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-md font-medium transition"
+          >
+            {submitting ? "Submitting..." : "Submit Reputation"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

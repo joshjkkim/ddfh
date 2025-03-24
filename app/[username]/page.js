@@ -5,9 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { 
   User, MessageSquare, Clock, Diff, Flag, 
-  Settings, Shield, Mail, Share2
+  Settings, Shield, IdCard
 } from "lucide-react";
 import Header from "../components/Header";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -174,16 +175,6 @@ export default function ProfilePage() {
                 fill
                 className="object-cover"
               />
-              {user.role === "admin" && (
-                <div className="absolute bottom-0 right-0 bg-red-500 rounded-full p-1">
-                  <Shield className="w-4 h-4 text-white" />
-                </div>
-              )}
-              {user.role === "moderator" && (
-                <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1">
-                  <Shield className="w-4 h-4 text-white" />
-                </div>
-              )}
             </div>
           </div>
           
@@ -198,6 +189,10 @@ export default function ProfilePage() {
                   <span className="inline-flex items-center">
                     <User className="w-4 h-4 mr-1" />
                     {user.role || "Member"}
+                  </span>
+                  <span className="inline-flex items-center ml-2">
+                    <IdCard className="w-4 h-4 mr-1" />
+                    UID: {user.id}
                   </span>
                   <span className="inline-flex items-center ml-4">
                     <Clock className="w-4 h-4 mr-1" />
@@ -294,23 +289,27 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-4 max-h-[400px] overflow-y-auto">
                   {userPosts && userPosts.map((post) => (
-                    <div key={post.id} className="bg-gray-700 p-4 rounded">
-                      <p>{post.content}</p>
-                      {post.share_file_key && (
-                        <div className="bg-gray-700/50 rounded-lg p-3 mb-4 flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                          </svg>
-                          <span className="text-gray-300 text-sm truncate">{post.share_file_key}</span>
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-400">
-                        Posted on {new Date(post.created_at).toLocaleDateString()}
-                      </p>
-                      <p className={`text-xs ${post.is_marketplace ? "text-green-500" : "text-red-500"}}`}>
-                        {post.is_marketplace ? "Market" : "Reply"}
-                      </p>
-                    </div>
+                    
+                      <div key={post.id} className="bg-gray-700 p-4 rounded">
+                        <Link href={`/thread/${username}/${post.parent_post_id ?? post.id}`}>
+                        <p>{post.content}</p>
+                        {post.share_file_key && (
+                          <div className="bg-gray-700/50 rounded-lg p-3 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            <span className="text-gray-300 text-sm truncate">{post.share_file_key}</span>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-400">
+                          Posted on {new Date(post.created_at).toLocaleDateString()}
+                        </p>
+                        <p className={`text-xs ${post.is_marketplace ? "text-green-500 hover:text-green-500" : "text-red-500"}}`}>
+                          {post.is_marketplace ? "Market" : "Reply"}
+                        </p>
+                        </Link>
+                      </div>
+                    
                   ))}
                 </div>
               )}

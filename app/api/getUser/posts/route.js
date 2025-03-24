@@ -26,7 +26,7 @@ export async function GET(request) {
 
     // Now, get all posts authored by this user.
     const postsQuery = `
-      SELECT p.id, p.thread_id, p.content, p.created_at, p.updated_at, p.is_marketplace, p.share_file_key,
+      SELECT p.id, p.thread_id, p.content, p.created_at, p.updated_at, p.is_marketplace, p.share_file_key, p.parent_post_id,
              u.username AS author_username
       FROM posts p
       JOIN users u ON p.author_id = u.id
