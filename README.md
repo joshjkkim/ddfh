@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
 
-First, run the development server:
+# DDFH - DumDum File Hosting
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**DDFH** is a cutting-edge encrypted file hosting platform that combines robust security with community interaction. Designed to protect your sensitive data, DDFH uses state-of-the-art encryption and a zero-knowledge architecture to ensure that only you can access your files.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Key Features
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### **Advanced Encryption & Zero-Knowledge Storage**
+- **AES-GCM Encryption:** Files are encrypted on the client-side before upload, ensuring that only encrypted data is stored.
+- **Zero-Knowledge Infrastructure:** Our system never sees unencrypted content—only file metadata is stored in our PostgreSQL database.
+- **Secure File Sharing:** Users receive a shareable file link along with a decryption key and a unique panel key for file management. We will NEVER store your decryption keys
+- **Panel:** On top of your decryption key a panel key is generated for you to verify your access to that post as well as monitoring your post, here you can prematurely delete such the post, all records from our db and storage.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### **User Security & Privacy**
+- **Anonymous Uploads:** Upload files without requiring personal details, ensuring your privacy is maintained.
+- **JWT-Based Authentication:** Our session management is powered by JSON Web Tokens, providing secure, stateless authentication.
 
-## Learn More
+### **Robust Forum & Marketplace**
+- **Secure Forum:** Engage with a community in our secure forum where only authorized users (e.g., admins) can create threads.
+- **Marketplace Integration:** List and manage encrypted files in a marketplace setting. Marketplace posts include file metadata, shareable links, and verification panel keys.
+- **Content Ownership:** Users can delete or update their own posts, ensuring complete control over personal content.
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
