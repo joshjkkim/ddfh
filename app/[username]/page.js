@@ -145,17 +145,14 @@ export default function ProfilePage() {
     );
   }
 
-  // Check if the logged-in user is viewing their own profile
   const isOwner = session && session.username === username;
   
-  // Default avatar/banner if not set
   const avatarSrc = avatar || "/defaultuser.png";
   const bannerSrc = banner || "/defaultbanner.png";
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       <Header session={session}/>
-      {/* Banner */}
       <div 
         className="w-full h-48 md:h-64 bg-gray-800 bg-cover bg-center relative"
         style={{ backgroundImage: `url(${bannerSrc})` }}
@@ -163,10 +160,8 @@ export default function ProfilePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-70"></div>
       </div>
       
-      {/* Profile Info Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-10">
         <div className="flex flex-col md:flex-row">
-          {/* Avatar */}
           <div className="shrink-0">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-gray-900 overflow-hidden relative bg-gray-800">
               <Image 
@@ -178,7 +173,6 @@ export default function ProfilePage() {
             </div>
           </div>
           
-          {/* User Info */}
           <div className="mt-4 md:mt-8 md:ml-6 flex-1">
             <div className="flex flex-wrap items-start justify-between">
               <div>
@@ -224,7 +218,6 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            {/* Status or Bio */}
             <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
               <p className="text-gray-300 italic">
                 {user.bio || "This user hasn't added a bio yet."}
@@ -233,19 +226,19 @@ export default function ProfilePage() {
           </div>
         </div>
         
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 mt-6 gap-6">
           <div className="bg-gray-800 rounded-lg p-4 text-center border border-gray-700 hover:border-purple-500 transition-colors">
             <p className="text-3xl font-bold text-white">{user.post_count || 0}</p>
             <p className="text-gray-400 text-sm">Posts</p>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4 text-center border border-gray-700 hover:border-purple-500 transition-colors">
-            <p className={`text-3xl font-bold ${user.reputation >= 0 ? "text-green-400" : "text-red-400"}`}>{user.reputation || 0}</p>
-            <p className="text-gray-400 text-sm">Reputation</p>
-          </div>
+          <Link href={`/${user.username}/reputation`}>
+            <div className="bg-gray-800 rounded-lg p-4 text-center border border-gray-700 hover:border-purple-500 transition-colors">
+              <p className={`text-3xl font-bold ${user.reputation >= 0 ? "text-green-400" : "text-red-400"}`}>{user.reputation || 0}</p>
+              <p className="text-gray-400 text-sm">Reputation</p>
+            </div>
+          </Link>
         </div>
         
-        {/* Tabs Section */}
         <div className="mt-8 border-b border-gray-700">
           <nav className="flex space-x-8">
             <button 
@@ -271,7 +264,6 @@ export default function ProfilePage() {
           </nav>
         </div>
         
-        {/* Tab Content */}
         <div className="mt-6 pb-8">
           
           {activeTab === "posts" && (
@@ -320,7 +312,6 @@ export default function ProfilePage() {
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
               <h2 className="text-xl font-bold mb-4">Connected Accounts</h2>
               
-              {/* You would fetch and map through actual social accounts here */}
               <div className="text-center py-6">
                 <User className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400">No connected accounts to display</p>
