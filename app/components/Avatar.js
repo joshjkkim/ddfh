@@ -20,17 +20,20 @@ export default function Avatar({ avatarKey, alt, className }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!avatarKey) return;
-    async function fetchAvatar() {
-      try {
-        const url = await getUserAvatar(avatarKey);
-        setAvatarUrl(url);
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
+    if (avatarKey) {
+      async function fetchAvatar() {
+        try {
+          const url = await getUserAvatar(avatarKey);
+          setAvatarUrl(url);
+        } catch (err) {
+          console.error(err);
+          setError(err.message);
+        }
       }
+      fetchAvatar();
+    } else {
+      setAvatarUrl("/defaultuser.png")
     }
-    fetchAvatar();
   }, [avatarKey]);
 
   if (error) return <p>Error loading avatar</p>;

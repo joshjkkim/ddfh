@@ -1,14 +1,10 @@
 // /app/api/thread/[threadTitle]/[postId]/route.js
-import { Client } from "pg";
+import pool from "../../../../lib/db";
 
 export async function GET(request, { params }) {
   const { threadTitle, postId } = await params;
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
+  const client = await pool.connect();
 
   try {
     // Query for the post details using postId.
@@ -49,6 +45,6 @@ export async function GET(request, { params }) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

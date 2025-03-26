@@ -1,4 +1,6 @@
-import { Client } from 'pg';
+import pool from '../../lib/db';
+import bip39 from 'bip39';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 
 export async function POST(request) {
@@ -11,13 +13,10 @@ const body = await request.json();
     });
   }
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
+  const client = await pool.connect();
 
-  try {
-    await client.connect();
+
+  try {;
     const result = await client.query(
       `SELECT * FROM security_codes WHERE code = $1 AND used = false`,
       
@@ -55,16 +54,21 @@ const body = await request.json();
         [body.inviteCode, body.username]
     );
 
+    const randomBytes = await crypto.randomBytes(16)
+    const mnemonic = await bip39.entropyToMnemonic(randomBytes.toString('hex')) 
 
+    const seedHash = await bcrypt.hash(mnemonic, saltRounds);
 
     const res = await client.query(
-        `INSERT INTO users (username, password_hash)
-         VALUES ($1, $2)
+        `INSERT INTO users (username, password_hash, seed_phrase)
+         VALUES ($1, $2, $3)
          RETURNING id`,
-        [body.username, passwordHash]
+        [body.username, passwordHash, seedHash]
     );
 
-    return new Response(JSON.stringify({ id: res.rows[0].id }), {
+    
+
+    return new Response(JSON.stringify({ id: res.rows[0].id, seed: mnemonic }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
     });
@@ -76,6 +80,6 @@ const body = await request.json();
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

@@ -11,9 +11,9 @@ export default function SharePage() {
   const shareId = params.shareId;
   const searchParams = useSearchParams();
   const filename = searchParams.get("filename");
-  const ivBase64 = searchParams.get("iv"); // Get the IV from the URL
+  const ivBase64 = searchParams.get("iv");
 
-  const [decryptionKey, setDecryptionKey] = useState("");
+  const [decryptionKey, setDecryptionKey] = useState(searchParams.get("decryptionKey") ?? "");
   const [encryptedFileUrl, setEncryptedFileUrl] = useState("");
   const [previewText, setPreviewText] = useState(""); // for text files
   const [previewUrl, setPreviewUrl] = useState(""); // for blob URLs (images, pdf, etc.)
@@ -22,102 +22,9 @@ export default function SharePage() {
   const [decryptionProgress, setDecryptionProgress] = useState(0);
   const [decryptionSuccess, setDecryptionSuccess] = useState(false);
   const [isUrlFetching, setIsUrlFetching] = useState(false);
-  const canvasRef = useRef(null);
 
-  // Dynamic background animation
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
-    // Create a grid of points
-    const gridSize = 30;
-    const points = [];
-    const rows = Math.ceil(canvas.height / gridSize);
-    const cols = Math.ceil(canvas.width / gridSize);
-    
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) {
-        points.push({
-          x: x * gridSize,
-          y: y * gridSize,
-          baseX: x * gridSize,
-          baseY: y * gridSize,
-          offsetX: 0,
-          offsetY: 0
-        });
-      }
-    }
-    
-    // Animation function
-    function animate() {
-      requestAnimationFrame(animate);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Update point positions
-      const time = Date.now() / 3000;
-      points.forEach(point => {
-        // Create a wave effect
-        point.offsetX = Math.sin(time + point.baseY * 0.02) * 5;
-        point.offsetY = Math.cos(time + point.baseX * 0.02) * 5;
-        
-        point.x = point.baseX + point.offsetX;
-        point.y = point.baseY + point.offsetY;
-      });
-      
-      // Draw lines between adjacent points
-      ctx.strokeStyle = "rgba(0, 180, 216, 0.07)";
-      ctx.lineWidth = 1;
-      
-      for (let y = 0; y < rows - 1; y++) {
-        for (let x = 0; x < cols - 1; x++) {
-          const index = y * cols + x;
-          const point = points[index];
-          const pointRight = points[index + 1];
-          const pointDown = points[index + cols];
-          
-          // Draw line to the right
-          ctx.beginPath();
-          ctx.moveTo(point.x, point.y);
-          ctx.lineTo(pointRight.x, pointRight.y);
-          ctx.stroke();
-          
-          // Draw line down
-          ctx.beginPath();
-          ctx.moveTo(point.x, point.y);
-          ctx.lineTo(pointDown.x, pointDown.y);
-          ctx.stroke();
-        }
-      }
-      
-      // Draw points
-      points.forEach(point => {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(0, 180, 216, 0.3)";
-        ctx.fill();
-      });
-    }
-    
-    animate();
-    
-    // Resize handler
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
+  const didDecrypt = useRef(false);
 
-  // Utility: Convert base64 IV to Uint8Array
   const getIVFromBase64 = (base64) => {
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
@@ -152,7 +59,6 @@ export default function SharePage() {
     return () => clearInterval(interval);
   };
 
-  // Fetch the pre-signed GET URL for the file when filename is available
   useEffect(() => {
     if (filename) {
       const fetchPresignedUrl = async () => {
@@ -175,6 +81,13 @@ export default function SharePage() {
       fetchPresignedUrl();
     }
   }, [filename]);
+
+  useEffect(() => {
+    if (decryptionKey && encryptedFileUrl && !didDecrypt.current) {
+      didDecrypt.current = true;
+      handleDecrypt();
+    }
+  }, [decryptionKey, encryptedFileUrl]);
 
   const handleDecrypt = async () => {
     try {
@@ -276,11 +189,7 @@ export default function SharePage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-0 m-0 overflow-hidden relative">
-      {/* Background Animation Canvas */}
-      <canvas 
-        ref={canvasRef} 
-        className="fixed top-0 left-0 w-full h-full -z-10"
-      />
+  
       
       <header className="py-4 px-6 bg-gradient-to-r from-cyan-950 via-blue-950 to-purple-950 bg-opacity-70 backdrop-blur-sm border-b border-gray-700">
         <Link href="/">

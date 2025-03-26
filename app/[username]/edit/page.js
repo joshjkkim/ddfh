@@ -149,11 +149,10 @@ export default function EditProfilePage() {
     
     try {
       const formData = new FormData();
-      formData.append("username", formValues.username);
+      formData.append("newUsername", formValues.username);
+      formData.append("oldUsername", username)
       formData.append("bio", formValues.bio);
-      // Append other text fields if needed, e.g., email, location, website...
       
-      // Append files if new ones have been selected
       if (avatarFile) {
         formData.append("avatar_img", avatarFile);
       }
@@ -161,7 +160,6 @@ export default function EditProfilePage() {
         formData.append("banner_img", bannerFile);
       }
       
-      // Call your updateProfile endpoint
       const res = await fetch("/api/updateProfile", {
         method: "PUT",
         body: formData,

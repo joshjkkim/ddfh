@@ -1,19 +1,15 @@
 
-import { Client } from "pg";
+import pool from "../../../lib/db";
 
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
-    const username = searchParams.get("username");
+    const id = searchParams.get("id");
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
+  const client = await pool.connect();
 
   try {
-    const userQuery = "SELECT id FROM users WHERE username = $1";
-    const userResult = await client.query(userQuery, [username]);
+    const userQuery = "SELECT id FROM users WHERE id = $1";
+    const userResult = await client.query(userQuery, [id]);
     if (userResult.rows.length === 0) {
       return new Response(JSON.stringify({ error: "User not found" }), {
         status: 404,
@@ -24,11 +20,22 @@ export async function GET(request) {
 
     // Now, get all posts authored by this user.
     const reputationQuery = `
-      SELECT p.id, p.receiver_id, p.receiver_username, p.giver_id, p.giver_username, p.amount, p.message, p.date_given
-      FROM reputation p
-      WHERE p.receiver_id = $1
-      ORDER BY p.date_given DESC
-    `;
+    SELECT 
+      r.id, 
+      r.receiver_id, 
+      u_receiver.username AS receiver_username, 
+      r.giver_id, 
+      u_giver.username AS giver_username, 
+      r.amount, 
+      r.message, 
+      r.date_given
+    FROM reputation r
+    JOIN users u_receiver ON r.receiver_id = u_receiver.id
+    JOIN users u_giver ON r.giver_id = u_giver.id
+    WHERE r.receiver_id = $1
+    ORDER BY r.date_given DESC
+  `;
+
     const reputationResult = await client.query(reputationQuery, [userId]);
 
     return new Response(JSON.stringify(reputationResult.rows), {
@@ -42,6 +49,6 @@ export async function GET(request) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

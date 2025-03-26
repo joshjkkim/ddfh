@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { 
   User, MessageSquare, Clock, Diff, Flag, 
-  Settings, Shield, IdCard
+  Settings, Shield, IdCard,
+  LogOut
 } from "lucide-react";
 import Header from "../components/Header";
 import Link from "next/link";
+import LogoutButton from "../components/LogoutButton";
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -197,6 +199,8 @@ export default function ProfilePage() {
               
               <div className="mt-4 md:mt-0 flex space-x-2">
                 {isOwner ? (
+                  <>
+                  <LogoutButton />
                   <button 
                     onClick={() => router.push(`${username}/edit/`)}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium flex items-center transition-colors"
@@ -204,6 +208,7 @@ export default function ProfilePage() {
                     <Settings className="w-4 h-4 mr-2" />
                     Edit Profile
                   </button>
+                  </>
                 ) : (
                   <>
                     <button 

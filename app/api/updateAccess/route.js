@@ -1,5 +1,5 @@
 // /app/api/updateAccess/route.js
-import { Client } from 'pg';
+import pool from '../../lib/db';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 export async function GET(request) {
@@ -13,10 +13,7 @@ export async function GET(request) {
     });
   }
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
+  const client = await pool.connect();
 
   const s3Client = new S3Client({
     region: process.env.AWS_REGION,
@@ -27,7 +24,6 @@ export async function GET(request) {
   });
 
   try {
-    await client.connect();
     // Increment the times_accessed column by 1 for the given shareId
     const result = await client.query(
       `UPDATE file_metadata
@@ -90,6 +86,6 @@ export async function GET(request) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

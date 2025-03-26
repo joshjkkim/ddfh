@@ -65,7 +65,7 @@ export default function ReputationPage() {
         async function fetchUserReputation() {
             try {
             const res = await fetch(
-                `/api/getUser/reputation?username=${encodeURIComponent(user?.username)}`
+                `/api/getUser/reputation?id=${encodeURIComponent(user?.id)}`
             );
             if (!res.ok) {
                 setError("Failed to fetch user's reputations")

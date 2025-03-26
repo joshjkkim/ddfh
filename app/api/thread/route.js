@@ -1,5 +1,5 @@
 // /app/api/thread/route.js
-import { Client } from "pg";
+import pool from "../../lib/db";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -12,11 +12,7 @@ export async function GET(request) {
     });
   }
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
+  const client = await pool.connect();
 
   try {
     // Query thread data based on the title (ensure titles/slugs are unique)
@@ -57,6 +53,6 @@ export async function GET(request) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

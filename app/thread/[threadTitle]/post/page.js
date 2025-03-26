@@ -18,6 +18,7 @@ export default function CreateMarketPostPage() {
   const [loading, setLoading] = useState(false);
   const [charCount, setCharCount] = useState(0);
   const [session, setSession] = useState(null);
+  const [isContentOnly, setIsContentOnly] = useState(false);
   const MAX_CHAR_COUNT = 500;
 
   useEffect(() => {
@@ -38,8 +39,18 @@ export default function CreateMarketPostPage() {
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    // Handle the checkbox toggle separately
+    if (type === "checkbox" && name === "isContentOnly") {
+      setIsContentOnly(checked);
+      // If content-only mode is enabled, clear shareableLink and panelKey
+      if (checked) {
+        setFormData((prev) => ({ ...prev, shareableLink: "", panelKey: "" }));
+      }
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
     
     // Update character count for description
     if (name === "description") {
@@ -48,34 +59,8 @@ export default function CreateMarketPostPage() {
     
     // Clear field-specific error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    // Validate shareableLink
-    if (!formData.shareableLink) {
-      newErrors.shareableLink = "File link is required";
-    } else if (!isValidUrl(formData.shareableLink)) {
-      newErrors.shareableLink = "Please enter a valid URL";
-    }
-    
-    // Validate panelKey
-    if (!formData.panelKey) {
-      newErrors.panelKey = "Panel key is required";
-    } else if (formData.panelKey.length < 5) {
-      newErrors.panelKey = "Panel key must be at least 5 characters";
-    }
-    
-    // Validate description length
-    if (formData.description.length > MAX_CHAR_COUNT) {
-      newErrors.description = `Description exceeds maximum of ${MAX_CHAR_COUNT} characters`;
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const isValidUrl = (url) => {
@@ -87,6 +72,33 @@ export default function CreateMarketPostPage() {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Only validate shareableLink and panelKey if not in content-only mode
+    if (!isContentOnly) {
+      if (!formData.shareableLink) {
+        newErrors.shareableLink = "File link is required";
+      } else if (!isValidUrl(formData.shareableLink)) {
+        newErrors.shareableLink = "Please enter a valid URL";
+      }
+      
+      if (!formData.panelKey) {
+        newErrors.panelKey = "Panel key is required";
+      } else if (formData.panelKey.length < 5) {
+        newErrors.panelKey = "Panel key must be at least 5 characters";
+      }
+    }
+    
+    // Validate description length
+    if (formData.description.length > MAX_CHAR_COUNT) {
+      newErrors.description = `Description exceeds maximum of ${MAX_CHAR_COUNT} characters`;
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -94,22 +106,31 @@ export default function CreateMarketPostPage() {
     
     setLoading(true);
 
+    // In content-only mode, send null for shareableLink and panelKey
+    const payload = {
+      shareableLink: isContentOnly ? null : formData.shareableLink,
+      panelKey: isContentOnly ? null : formData.panelKey,
+      description: formData.description,
+    };
+
     try {
       const res = await fetch(`/api/thread/${encodeURIComponent(threadTitle)}/post`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       
       if (!res.ok) {
         const data = await res.json();
-        setErrors(data.error)
-      }
+        setErrors({ general: data.error });
+        setLoading(false);
+        return;
+      }      
       
       // On success, navigate back to the thread page
       router.push(`/thread/${encodeURIComponent(threadTitle)}`);
     } catch (err) {
-      setErrors(prev => ({ ...prev, general: err.message }));
+      setErrors((prev) => ({ ...prev, general: err.message }));
       setLoading(false);
     }
   };
@@ -139,54 +160,75 @@ export default function CreateMarketPostPage() {
               <p className="text-red-400">{errors.general}</p>
             </div>
           )}
+
+          {/* Toggle for Content-Only Post */}
+          <div className="mb-6 flex items-center">
+            <input
+              type="checkbox"
+              name="isContentOnly"
+              id="isContentOnly"
+              checked={isContentOnly}
+              onChange={handleChange}
+              className="mr-2"
+            />
+            <label htmlFor="isContentOnly" className="text-sm text-gray-300">
+              Post content only (no file link or panel key)
+            </label>
+          </div>
           
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
-              <div>
-                <label className="flex items-center text-sm font-medium mb-2">
-                  <LinkIcon size={16} className="mr-2" />
-                  Shareable File Link <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="url"
-                  name="shareableLink"
-                  placeholder="https://your-storage-link.com/your-file"
-                  value={formData.shareableLink}
-                  onChange={handleChange}
-                  className={`w-full p-3 rounded bg-gray-700 border ${
-                    errors.shareableLink ? "border-red-500" : "border-gray-600"
-                  } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                />
-                {errors.shareableLink && (
-                  <p className="mt-1 text-sm text-red-500">{errors.shareableLink}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-400">
-                  Provide a public, accessible link to your file (S3, Dropbox, Google Drive, etc.)
-                </p>
-              </div>
-              
-              <div>
-                <label className="flex items-center text-sm font-medium mb-2">
-                  <Key size={16} className="mr-2" />
-                  Panel Key <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="panelKey"
-                  placeholder="Enter your panel key"
-                  value={formData.panelKey}
-                  onChange={handleChange}
-                  className={`w-full p-3 rounded bg-gray-700 border ${
-                    errors.panelKey ? "border-red-500" : "border-gray-600"
-                  } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                />
-                {errors.panelKey && (
-                  <p className="mt-1 text-sm text-red-500">{errors.panelKey}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-400">
-                  Required for verification purposes
-                </p>
-              </div>
+              {!isContentOnly && (
+                <>
+                  <div>
+                    <label className="flex items-center text-sm font-medium mb-2">
+                      <LinkIcon size={16} className="mr-2" />
+                      Shareable File Link <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      name="shareableLink"
+                      placeholder="https://your-storage-link.com/your-file"
+                      value={formData.shareableLink}
+                      onChange={handleChange}
+                      disabled={isContentOnly}
+                      className={`w-full p-3 rounded bg-gray-700 border ${
+                        errors.shareableLink ? "border-red-500" : "border-gray-600"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                    />
+                    {errors.shareableLink && (
+                      <p className="mt-1 text-sm text-red-500">{errors.shareableLink}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-400">
+                      Provide a public, accessible link to your file (S3, Dropbox, Google Drive, etc.)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="flex items-center text-sm font-medium mb-2">
+                      <Key size={16} className="mr-2" />
+                      Panel Key <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="panelKey"
+                      placeholder="Enter your panel key"
+                      value={formData.panelKey}
+                      onChange={handleChange}
+                      disabled={isContentOnly}
+                      className={`w-full p-3 rounded bg-gray-700 border ${
+                        errors.panelKey ? "border-red-500" : "border-gray-600"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                    />
+                    {errors.panelKey && (
+                      <p className="mt-1 text-sm text-red-500">{errors.panelKey}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-400">
+                      Required for verification purposes
+                    </p>
+                  </div>
+                </>
+              )}
               
               <div>
                 <label className="flex items-center text-sm font-medium mb-2">

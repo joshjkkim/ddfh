@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { MessageCircleQuestion, MessageCircleWarning, Upload, Shield, Key, Share2, FileText, Lock, RefreshCw, Sparkles, Lollipop, Info, Clock, Eye, EyeClosed, User, UserCheck } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircleQuestion, MessageCircleWarning, Upload, Shield, Key, Share2, FileText, Lock, RefreshCw, Sparkles, Lollipop, Info, Clock, Eye, EyeClosed, User, UserCheck, Scissors, FolderCog, Folder } from 'lucide-react';
 import { generateAESKey, encryptData, exportKey } from "./lib/encrypt"; // adjust path accordingly
 import { buf as crc32Buffer } from "crc-32";
 import { useRouter } from "next/navigation";
@@ -60,6 +60,12 @@ function generatePanelKey(length = 32) {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+function generateShortURL(length = 8) {
+  const array = new Uint8Array(length);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
 // Helper: format file size in a human-readable format
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -90,8 +96,27 @@ export default function Home() {
   });
   const [showTooltip, setShowTooltip] = useState("");
   const [isHovered, setIsHovered] = useState(false);
+  const [autoDecryptEnabled, setAutoDecryptEnabled] = useState(false);
+  const [isShortUrl, setIsShortUrl] = useState(false)
+  const [shortUrl, setShortUrl] = useState("");
+  const [session, setSession] = useState(null)
+
   const router = useRouter();
 
+  useEffect(() => {
+      async function fetchSession() {
+        try {
+          const res = await fetch("/api/getSession");
+          if (res.ok) {
+            const data = await res.json();
+            setSession(data.session);
+            
+          }
+        } catch (err) {
+          console.error("Failed to fetch session:", err);
+        }}
+      fetchSession();
+    }, []);
 
   // Handle drag events
   const handleDrag = (e) => {
@@ -174,6 +199,42 @@ export default function Home() {
     }
   };
 
+  const shortenUrl = async () => {
+    try {
+      let shortUrlKey;
+      let isCustomUrl = false;
+      if(!session || !shortUrl) {
+        shortUrlKey = generateShortURL();
+      } else {
+        shortUrlKey = shortUrl;
+        isCustomUrl = true;
+      }
+      let shareLink = publicShareLink;
+
+      if(autoDecryptEnabled && privateKey) {
+        shareLink = `${publicShareLink}&decryptionKey=${privateKey}`;
+      }
+
+      const res = await fetch('/api/shortUrl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shortUrlKey,
+          fullLink: shareLink,
+          isCustomUrl: isCustomUrl
+        }),
+      });
+      if(!res.ok) {
+        throw new Error("Failed to shorten URL")
+      }
+      const data = await res.json();
+      setShortUrl(data.shortUrlKey);
+      setIsShortUrl(true);
+      
+    } catch(e) {
+
+    }
+  }
   // Upload file with encryption
   const uploadFile = async () => {
     if (!file) return;
@@ -181,55 +242,50 @@ export default function Home() {
     simulateProgress();
   
     try {
-      // 🔥 Step 1: Request PoW Challenge
       const powRes = await fetch('/api/create-challenge');
       if (!powRes.ok) throw new Error('Failed to get challenge');
       const { challenge, target } = await powRes.json();
-  
       console.log(`Challenge received: ${challenge}, Target: ${target}`);
   
-      // 🔥 Step 2: Solve Challenge
       const nonce = solveChallenge(challenge, target);
       if (!nonce) throw new Error('Failed to solve proof-of-work challenge');
       console.log(`Challenge solved with nonce: ${nonce}`);
   
-      // 🔥 Step 3: Generate AES key
       const key = await generateAESKey();
   
-      // Convert file to ArrayBuffer and encrypt the data
       const fileBuffer = await file.arrayBuffer();
       const { ciphertext, iv } = await encryptData(key, fileBuffer);
       const computedChecksum = await computeCRC32Checksum(ciphertext);
   
-      // Export the key for display (private decryption key)
       const exportedKey = await exportKey(key);
   
-      // Generate unique share id and filename for S3
       const shareId = Math.random().toString(36).substring(2, 15);
       const s3Filename = `${shareId}-${file.name}`;
   
-      // Generate a panel key for dashboard access
       const generatedPanelKey = generatePanelKey();
       setPanelKey(generatedPanelKey);
   
-      // 🔥 Step 4: Request Pre-Signed URL with Solved PoW
       const res = await fetch(
-        `/api/getSignedURL?filename=${encodeURIComponent(s3Filename)}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}`
+        `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${file.size}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}`
       );
-  
       if (!res.ok) {
-        throw new Error("Failed to obtain pre-signed URL");
+        throw new Error("Failed to obtain pre-signed POST");
       }
+
+      const presignedPost = await res.json();
   
-      const { url } = await res.json();
-  
-      // 🔥 Step 5: Upload the Encrypted File to S3 using Pre-Signed URL
-      const uploadRes = await fetch(url, {
-        method: 'PUT',
-        headers: { "Content-Type": "application/octet-stream" },
-        body: ciphertext,
+      const formData = new FormData();
+      // Append all fields from presignedPost.fields
+      Object.entries(presignedPost.fields).forEach(([key, value]) => {
+        formData.append(key, value);
       });
+      // Note: The field name for S3 must be "file"
+      formData.append("file", new Blob([ciphertext], { type: "application/octet-stream" }));
   
+      const uploadRes = await fetch(presignedPost.url, {
+        method: 'POST',
+        body: formData,
+      });
       if (!uploadRes.ok) {
         throw new Error("Failed to upload file to S3");
       }
@@ -275,7 +331,6 @@ export default function Home() {
       alert("Failed to upload file. Please try again.");
     }
   };
-  
 
   // Copy text to clipboard with feedback
   const copyToClipboard = (text, type) => {
@@ -361,7 +416,7 @@ export default function Home() {
             ) : (
               <User className="h-5 w-5 mr-2" />
             )}
-            <strong>Login</strong>
+            <strong>Login: <span className="text-sm">{session ? session.username : "Logged Out"}</span></strong>
           </button>
           </div>
 
@@ -550,125 +605,198 @@ export default function Home() {
             </div>
           ) : (
             <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-gray-700/50">
-              <div className="text-center mb-8">
-                <div className="mx-auto h-20 w-20 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
-                  <Shield className="h-10 w-10 text-green-400" />
+            <div className="text-center mb-8">
+              <div className="mx-auto h-20 w-20 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+                <Shield className="h-10 w-10 text-green-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-green-400 mb-2">File Encrypted &amp; Uploaded!</h2>
+              <p className="text-gray-300">Your file has been securely encrypted and is ready to share</p>
+              <div className="mt-2 py-1 px-4 bg-gray-700/40 inline-block rounded-full text-xs text-gray-300">
+                Expires in {formatSeconds(expiry)}
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Public Share Link */}
+              <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center">
+                    <Share2 className="h-5 w-5 mr-2 text-cyan-400" />
+                    <span className="font-medium">Public Share Link</span>
+                  </div>
+                  <button 
+                    onClick={() =>
+                      copyToClipboard(
+                        autoDecryptEnabled
+                          ? `${publicShareLink}&decryptionKey=${privateKey}`
+                          : publicShareLink,
+                        'link'
+                      )
+                    }
+                    className={`text-cyan-400 hover:text-cyan-300 hover:scale-110 text-sm ${copyStatus.link ? 'bg-green-800/50' : 'bg-gray-800/50'} px-3 py-1 rounded-full transition-all ease-in-out duration-200`}
+                  >
+                    {copyStatus.link ? 'Copied!' : 'Copy'}
+                  </button>
                 </div>
-                <h2 className="text-2xl font-bold text-green-400 mb-2">File Encrypted & Uploaded!</h2>
-                <p className="text-gray-300">Your file has been securely encrypted and is ready to share</p>
-                <div className="mt-2 py-1 px-4 bg-gray-700/40 inline-block rounded-full text-xs text-gray-300">
-                  Expires in {formatSeconds(expiry)}
+                <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
+                  {autoDecryptEnabled
+                          ? `${publicShareLink}&decryptionKey=${privateKey}`
+                          : publicShareLink}
+                </div>
+                <p className="text-xs text-gray-400 mt-2 flex items-center">
+                  <Share2 className="h-3 w-3 mr-1" />
+                  Anyone with this link can download the encrypted file BUT not the decrypted file
+                </p>
+                {/* Automatic Decryption Toggle */}
+                <div className="flex justify-between items-center mt-4">
+                  <div className="flex items-center">
+                    <FolderCog className="h-5 w-5 mr-2 text-cyan-400" />
+                    <span className="font-medium">Automatic Decryption</span>
+                  </div>
+                  <button 
+                    onClick={() => setAutoDecryptEnabled(!autoDecryptEnabled)}
+                    className="text-sm px-3 py-1 rounded-full transition-all ease-in-out duration-200 bg-gray-800/50 text-cyan-400 hover:bg-cyan-600 hover:text-white"
+                  >
+                    {autoDecryptEnabled ? 'Enabled' : 'Disabled'}
+                  </button>
+                </div>
+                <div className="flex justify-between items-center mt-4">
+                  <div className="flex items-center">
+                    <Scissors className="h-5 w-5 mr-2 text-cyan-400" />
+                    <span className="font-medium">Shortened URL</span>
+                  </div>
+                  <button 
+                    onClick={() => shortenUrl()}
+                    className={`text-sm px-3 py-1 rounded-full transition-all ease-in-out duration-200 bg-gray-800/50 text-cyan-400 ${isShortUrl ? "hover:bg-red-600" : "hover:bg-cyan-600"} hover:text-white`}
+                    disabled={isShortUrl}
+                  >
+                    Shorten URL?
+                  </button>
+                  {session && (
+                    <div className="mt-4">
+                      <label className="flex items-center text-sm font-medium mb-2">
+                        <Share2 size={16} className="mr-2" />
+                        Custom Short URL Key
+                      </label>
+                      <input
+                        type="text"
+                        value={shortUrl}
+                        onChange={(e) => setShortUrl(e.target.value)}
+                        placeholder="Enter your custom key"
+                        className="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      <p className="mt-1 text-xs text-gray-400">Only available to valid users.</p>
+                    </div>
+                  )}
+                </div>
+                
+                {isShortUrl && shortUrl && (
+                  <>
+                    <button 
+                      onClick={() =>
+                        copyToClipboard(
+                          `http://localhost:3000/short/${shortUrl}`,
+                          'short'
+                        )
+                      }
+                      className={`text-cyan-400 hover:text-cyan-300 hover:scale-110 text-sm ${copyStatus.short ? 'bg-green-800/50' : 'bg-gray-800/50'} px-3 py-1 rounded-full transition-all ease-in-out duration-200`}
+                    >
+                      {copyStatus.short ? 'Copied!' : 'Copy'}
+                    </button>
+                    <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800 mt-4">
+                      http://localhost:3000/short/{shortUrl}
+                    </div>
+                  </>
+                )}
+
+                
+              </div>
+              
+              <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center">
+                    <Key className="h-5 w-5 mr-2 text-yellow-400" />
+                    <span className="font-medium">Private Decryption Key</span>
+                  </div>
+                  <button 
+                    onClick={() => copyToClipboard(privateKey, 'key')}
+                    className={`text-cyan-400 hover:text-cyan-300 hover:scale-110 text-sm ${copyStatus.key ? 'bg-green-800/50' : 'bg-gray-800/50'} px-3 py-1 rounded-full transition-all ease-in-out duration-200`}
+                  >
+                    {copyStatus.key ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
+                  {privateKey}
+                </div>
+                <p className="text-xs text-red-400 mt-2 flex items-center">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Save this key securely! It cannot be recovered and is required to decrypt your file.
+                </p>
+              </div>
+              
+              <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center">
+                    <Key className="h-5 w-5 mr-2 text-green-400" />
+                    <span className="font-medium">Panel Key</span>
+                  </div>
+                  <button 
+                    onClick={() => copyToClipboard(panelKey, 'panel')}
+                    className={`text-cyan-400 hover:text-cyan-300 hover:scale-110 text-sm ${copyStatus.panel ? 'bg-green-800/50' : 'bg-gray-800/50'} px-3 py-1 rounded-full transition-all duration-300 ease-in-out`}
+                  >
+                    {copyStatus.panel ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
+                  {panelKey}
+                </div>
+                <p className="text-xs text-gray-400 mt-2 flex items-center">
+                  <FileText className="h-3 w-3 mr-1" />
+                  Use this panel key to access your dashboard and monitor your file activity.
+                </p>
+              </div>
+              
+              <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
+                <div className="flex items-center mb-2">
+                  <FileText className="h-5 w-5 mr-2 text-purple-400" />
+                  <span className="font-medium">Panel Info</span>
+                </div>
+                <div className="flex space-x-2 text-sm text-gray-300">
+                  <div className="flex-1 bg-gray-800/50 p-3 rounded-md">
+                    <div className="flex items-center mb-1">
+                      <Eye className="h-4 w-4 mr-1 text-cyan-400" />
+                      <span className="text-xs font-medium">Access Limit</span>
+                    </div>
+                    <p className="text-lg font-bold text-center">{maxAccesses}</p>
+                  </div>
+                  <div className="flex-1 bg-gray-800/50 p-3 rounded-md">
+                    <div className="flex items-center mb-1">
+                      <Clock className="h-4 w-4 mr-1 text-cyan-400" />
+                      <span className="text-xs font-medium">Expires in</span>
+                    </div>
+                    <p className="text-lg font-bold text-center">{formatSeconds(expiry)}</p>
+                  </div>
+                  <div className="flex-1 bg-gray-800/50 p-3 rounded-md">
+                    <div className="flex items-center mb-1">
+                      <FileText className="h-4 w-4 mr-1 text-cyan-400" />
+                      <span className="text-xs font-medium">File Size</span>
+                    </div>
+                    <p className="text-lg font-bold text-center">{formatFileSize(file.size)}</p>
+                  </div>
                 </div>
               </div>
               
-              <div className="space-y-6">
-                <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center">
-                      <Share2 className="h-5 w-5 mr-2 text-cyan-400" />
-                      <span className="font-medium">Public Share Link</span>
-                    </div>
-                    <button 
-                      onClick={() => copyToClipboard(publicShareLink, 'link')}
-                      className={`text-cyan-400 hover:text-cyan-300 hover:scale-110 text-sm ${copyStatus.link ? 'bg-green-800/50' : 'bg-gray-800/50'} px-3 py-1 rounded-full transition-all ease-in-out duration-200`}
-                    >
-                      {copyStatus.link ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                  <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
-                    {publicShareLink}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2 flex items-center">
-                    <Share2 className="h-3 w-3 mr-1" />
-                    Anyone with this link can download the encrypted file
-                  </p>
+              <button
+                onClick={() => console.log("Reset form or upload another file")}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium py-3 px-6 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transform hover:scale-105 mt-6"
+              >
+                <div className="flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Upload Another File
                 </div>
-                
-                <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center">
-                      <Key className="h-5 w-5 mr-2 text-yellow-400" />
-                      <span className="font-medium">Private Decryption Key</span>
-                    </div>
-                    <button 
-                      onClick={() => copyToClipboard(privateKey, 'key')}
-                      className={`text-cyan-400 hover:text-cyan-300 hover:scale-110 text-sm ${copyStatus.key ? 'bg-green-800/50' : 'bg-gray-800/50'} px-3 py-1 rounded-full transition-all ease-in-out duration-200`}
-                    >
-                      {copyStatus.key ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                  <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
-                    {privateKey}
-                  </div>
-                  <p className="text-xs text-red-400 mt-2 flex items-center">
-                    <Lock className="h-3 w-3 mr-1" />
-                    Save this key securely! It cannot be recovered and is required to decrypt your file.
-                  </p>
-                </div>
-                
-                <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center">
-                      <Key className="h-5 w-5 mr-2 text-green-400" />
-                      <span className="font-medium">Panel Key</span>
-                    </div>
-                    <button 
-                      onClick={() => copyToClipboard(panelKey, 'panel')}
-                      className={`text-cyan-400 hover:text-cyan-300 hover:scale-110  text-sm ${copyStatus.panel ? 'bg-green-800/50' : 'bg-gray-800/50'} px-3 py-1 rounded-full transition-all duration-300 ease-in-out`}
-                    >
-                      {copyStatus.panel ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                  <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
-                    {panelKey}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2 flex items-center">
-                    <FileText className="h-3 w-3 mr-1" />
-                    Use this panel key to access your dashboard and monitor your file activity.
-                  </p>
-                </div>
-                
-                <div className="bg-gray-700/70 p-4 rounded-lg border border-gray-600/50">
-                  <div className="flex items-center mb-2">
-                    <FileText className="h-5 w-5 mr-2 text-purple-400" />
-                    <span className="font-medium">Dashboard Access</span>
-                  </div>
-                  <div className="flex space-x-2 text-sm text-gray-300">
-                    <div className="flex-1 bg-gray-800/50 p-3 rounded-md">
-                      <div className="flex items-center mb-1">
-                        <Eye className="h-4 w-4 mr-1 text-cyan-400" />
-                        <span className="text-xs font-medium">Access Limit</span>
-                      </div>
-                      <p className="text-lg font-bold text-center">{maxAccesses}</p>
-                    </div>
-                    <div className="flex-1 bg-gray-800/50 p-3 rounded-md">
-                      <div className="flex items-center mb-1">
-                        <Clock className="h-4 w-4 mr-1 text-cyan-400" />
-                        <span className="text-xs font-medium">Expires in</span>
-                      </div>
-                      <p className="text-lg font-bold text-center">{formatSeconds(expiry)}</p>
-                    </div>
-                    <div className="flex-1 bg-gray-800/50 p-3 rounded-md">
-                      <div className="flex items-center mb-1">
-                        <FileText className="h-4 w-4 mr-1 text-cyan-400" />
-                        <span className="text-xs font-medium">File Size</span>
-                      </div>
-                      <p className="text-lg font-bold text-center">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={resetForm}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium py-3 px-6 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transform hover:scale-105 mt-6"
-                >
-                  <div className="flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    Upload Another File
-                  </div>
-                </button>
-              </div>
+              </button>
             </div>
+          </div>
           )}
           
           <div className="mt-12 text-center text-gray-400 text-sm">

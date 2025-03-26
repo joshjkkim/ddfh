@@ -1,4 +1,4 @@
-import { Client } from "pg";
+import pool from '../../../../../lib/db';
 import { cookies } from 'next/headers';
 import jwt from "jsonwebtoken";
 
@@ -27,12 +27,7 @@ export async function PUT(request, { params } ) {
         );
       }
     
-      // Connect to PostgreSQL
-      const client = new Client({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
-      });
-      await client.connect();
+      const client = await pool.connect();
     
       try {
         // Check if the post exists and retrieve its author_id
@@ -78,7 +73,7 @@ export async function PUT(request, { params } ) {
           { status: 500, headers: { "Content-Type": "application/json" } }
         );
       } finally {
-        await client.end();
+        await client.release();
       }
     }
     

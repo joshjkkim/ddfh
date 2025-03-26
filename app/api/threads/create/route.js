@@ -1,4 +1,4 @@
-import { Client } from "pg";
+import pool from "../../../lib/db";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
@@ -28,12 +28,7 @@ export async function POST(request) {
     );
   }
 
-  // Fetch the full user record from the database using session.id
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
+  const client = await pool.connect();
 
   let userRecord;
   try {
@@ -82,6 +77,6 @@ export async function POST(request) {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   } finally {
-    await client.end();
+    await client.release();
   }
 }

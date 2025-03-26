@@ -188,19 +188,21 @@ export default function ThreadPage() {
                             })}
                           </div>
                         </div>
+                        <div className="bg-gray-900 rounded-lg p-2 text-gray-300 whitespace-pre-line">
                         {post.share_file_key && (
-                          <div className="bg-gray-900 rounded-lg p-2 text-gray-300 whitespace-pre-line">
+                         <>
                             <span className="font-bold text-2xl inline-flex">
                               <FilePen className="h-6 w-6 mr-1 text-blue-400" />
                               {new URL(post.share_file_key, "http://localhost").searchParams.get("filename").replace(/^[^-]*-/, "")}
                             </span>
                             <br />
+                            </>
+                          )}
                             <span className="text-md inline-flex">
                               <CornerDownRight className="h-6 w-6 mr-1 text-blue-400" />
                               {post.content}
                             </span>
                           </div>
-                        )}
                       </div>
                     </div>
                   </div>

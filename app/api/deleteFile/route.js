@@ -1,5 +1,5 @@
 // /app/api/deleteFile/route.js
-import { Client } from 'pg';
+import pool from '../../lib/db';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 export async function DELETE(request) {
@@ -13,11 +13,6 @@ export async function DELETE(request) {
     });
   }
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-
   // Set up S3 client using environment variables
   const s3Client = new S3Client({
     region: process.env.AWS_REGION,
@@ -27,9 +22,9 @@ export async function DELETE(request) {
     },
   });
 
-  try {
-    await client.connect();
+  const client = await pool.connect()
 
+  try {
     // First, select the record to get the S3 key
     const selectResult = await client.query(
       `SELECT id, s3_key FROM file_metadata WHERE panel_key = $1`,
@@ -74,6 +69,6 @@ export async function DELETE(request) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

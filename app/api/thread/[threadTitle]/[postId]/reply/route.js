@@ -1,5 +1,5 @@
 // /app/api/thread/[threadTitle]/[postId]/reply/route.js
-import { Client } from "pg";
+import pool from "../../../../../lib/db";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
@@ -36,12 +36,7 @@ export async function POST(request, { params }) {
     });
   }
 
-  // Connect to PostgreSQL
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
+  const client = await pool.connect();
 
   try {
     // Ensure the parent post exists and get its thread_id.
@@ -107,6 +102,6 @@ export async function POST(request, { params }) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

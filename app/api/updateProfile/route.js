@@ -1,4 +1,4 @@
-import { Client } from "pg";
+import pool from '../../lib/db';
 import { cookies } from 'next/headers';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import jwt from "jsonwebtoken";
@@ -11,10 +11,12 @@ const generateKey = (prefix, originalName) => {
 };
 
 export async function PUT(request) {
+  const client = await pool.connect(); // initialize client at the start
   try {
     // Parse the form data
     const formData = await request.formData();
-    const username = formData.get("username");
+    const newUsername = formData.get("newUsername");
+    const oldUsername = formData.get("oldUsername");
     const bio = formData.get("bio") || null;
     
     // Get the token from the request's cookies
@@ -38,14 +40,27 @@ export async function PUT(request) {
       });
     }
 
-    // Ensure the token's username matches the username being updated
-    if (session.username !== username) {
+    // Ensure the token's username matches the oldUsername provided in the form
+    if (session.username !== oldUsername) {
       return new Response(JSON.stringify({ error: "You can only update your own profile." }), {
         status: 403,
         headers: { "Content-Type": "application/json" },
       });
     }
 
+    // If the username is changing, check for uniqueness
+    if (newUsername !== oldUsername) {
+      const checkQuery = `SELECT id FROM users WHERE username = $1`;
+      const checkResult = await client.query(checkQuery, [newUsername]);
+      if (checkResult.rowCount > 0 && checkResult.rows[0].id !== session.id) {
+        // A different user already has the new username
+        return new Response(
+          JSON.stringify({ error: "Username already exists" }),
+          { status: 409, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
     // Set up S3 client
     const s3Client = new S3Client({
       region: process.env.AWS_REGION,
@@ -55,16 +70,9 @@ export async function PUT(request) {
       },
     });
 
-    // Connect to Postgres to fetch existing user record
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    });
-    await client.connect();
-
-    // Get current avatar and banner keys (if any)
+    // Get current avatar and banner keys for the old username
     const selectQuery = `SELECT avatar_key, banner_key FROM users WHERE username = $1`;
-    const selectResult = await client.query(selectQuery, [username]);
+    const selectResult = await client.query(selectQuery, [oldUsername]);
     const currentAvatarKey = selectResult.rows[0]?.avatar_key;
     const currentBannerKey = selectResult.rows[0]?.banner_key;
 
@@ -76,7 +84,8 @@ export async function PUT(request) {
     const avatarFile = formData.get("avatar_img");
     if (avatarFile && typeof avatarFile.arrayBuffer === "function") {
       const avatarFilename = avatarFile.name;
-      avatarKey = generateKey(`${username}-avatar`, avatarFilename);
+      // Use the new username for S3 key if changed
+      avatarKey = generateKey(`${newUsername}-avatar`, avatarFilename);
       const avatarBuffer = Buffer.from(await avatarFile.arrayBuffer());
       const putAvatarCommand = new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET,
@@ -86,7 +95,7 @@ export async function PUT(request) {
       });
       await s3Client.send(putAvatarCommand);
       
-      // Delete old avatar if it exists
+      // Delete old avatar if exists
       if (currentAvatarKey) {
         const deleteAvatarCommand = new DeleteObjectCommand({
           Bucket: process.env.AWS_S3_BUCKET,
@@ -100,7 +109,7 @@ export async function PUT(request) {
     const bannerFile = formData.get("banner_img");
     if (bannerFile && typeof bannerFile.arrayBuffer === "function") {
       const bannerFilename = bannerFile.name;
-      bannerKey = generateKey(`${username}-banner`, bannerFilename);
+      bannerKey = generateKey(`${newUsername}-banner`, bannerFilename);
       const bannerBuffer = Buffer.from(await bannerFile.arrayBuffer());
       const putBannerCommand = new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET,
@@ -110,7 +119,7 @@ export async function PUT(request) {
       });
       await s3Client.send(putBannerCommand);
       
-      // Delete old banner if it exists
+      // Delete old banner if exists
       if (currentBannerKey) {
         const deleteBannerCommand = new DeleteObjectCommand({
           Bucket: process.env.AWS_S3_BUCKET,
@@ -121,18 +130,18 @@ export async function PUT(request) {
     }
 
     // Update the user record in PostgreSQL.
-    // Use COALESCE to retain existing values if no new file was uploaded.
     const updateQuery = `
       UPDATE users
-      SET bio = $1,
-          avatar_key = COALESCE($2, avatar_key),
-          banner_key = COALESCE($3, banner_key)
-      WHERE username = $4
+      SET username = $1,
+          bio = $2,
+          avatar_key = COALESCE($3, avatar_key),
+          banner_key = COALESCE($4, banner_key)
+      WHERE username = $5
       RETURNING username, bio, avatar_key, banner_key
     `;
-    const values = [bio, avatarKey, bannerKey, username];
+    const values = [newUsername, bio, avatarKey, bannerKey, oldUsername];
     const result = await client.query(updateQuery, values);
-    await client.end();
+    client.release();
 
     return new Response(JSON.stringify({ user: result.rows[0] }), {
       status: 200,

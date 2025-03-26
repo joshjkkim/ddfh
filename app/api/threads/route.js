@@ -1,12 +1,8 @@
 // /app/api/threads/route.js
-import { Client } from "pg";
+import pool from "../../lib/db";
 
 export async function GET(request) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
+  const client = await pool.connect();
 
   try {
     const result = await client.query(`
@@ -26,6 +22,6 @@ export async function GET(request) {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   } finally {
-    await client.end();
+    await client.release();
   }
 }

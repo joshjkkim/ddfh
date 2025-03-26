@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import pool from "../../lib/db";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
@@ -47,15 +47,10 @@ if (!body.recipient || !body.reputation || !body.message) {
             }
         );
     }
-  
-    // Connect to PostgreSQL
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    });
 
+    const client = await pool.connect();
+  
   try {
-    await client.connect();
     const result = await client.query(
       `SELECT id, username FROM users WHERE username = $1`,
       
@@ -131,6 +126,6 @@ if (!body.recipient || !body.reputation || !body.message) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }

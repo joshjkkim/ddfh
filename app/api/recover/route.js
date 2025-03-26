@@ -1,4 +1,4 @@
-// /app/api/login/route.js
+
 import pool from "../../lib/db";
 import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken'
@@ -6,12 +6,13 @@ import jwt from 'jsonwebtoken'
 export async function POST(request) {
     const body = await request.json();
     const username = body.username
-    const password = body.password
+    const seedPhrase = body.seedPhrase
+    const newPassword = body.newPassword
 
 
-  if (!username || !password) {
+  if (!username || !seedPhrase || !newPassword) {
     return new Response(
-      JSON.stringify({ error: "Username and password are required." }),
+      JSON.stringify({ error: "Username, seed phrase, and new password are required." }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -19,25 +20,38 @@ export async function POST(request) {
   const client = await pool.connect();
 
   try {
+    
+
     const res = await client.query("SELECT * FROM users WHERE username = $1", [
       username,
     ]);
     if (res.rowCount === 0) {
       return new Response(
-        JSON.stringify({ error: "Invalid credentials." }),
+        JSON.stringify({ error: "Invalid recovery." }),
         { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }
     const user = res.rows[0];
 
     
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
-    if (!passwordMatch) {
+    const seedMatch = await bcrypt.compare(seedPhrase, user.seed_phrase);
+    if (!seedMatch) {
       return new Response(
-        JSON.stringify({ error: "Invalid credentials." }),
+        JSON.stringify({ error: "Invalid recovery." }),
         { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }
+
+    const saltRounds = 10;
+    const passHash = await bcrypt.hash(newPassword, saltRounds);
+
+    const newPass = await client.query(
+        `UPDATE users
+         SET password_hash = $1
+         WHERE username = $2
+         RETURNING id`,
+        [passHash, username]
+      );
 
     const token = jwt.sign(
         { id: user.id, username: user.username },
@@ -45,7 +59,6 @@ export async function POST(request) {
         { expiresIn: "1h" }
     );
 
-    // Login successful – you could generate a session token or JWT here.
     return new Response(
       JSON.stringify({
         message: "Login successful.",

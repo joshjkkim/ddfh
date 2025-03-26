@@ -1,16 +1,12 @@
 // /app/api/user/[username]/posts/route.js
-import { Client } from "pg";
+import pool from "../../../lib/db";
 
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get("username");
 
   // Create and connect the PostgreSQL client.
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
+  const client = await pool.connect();
 
   try {
     // First, get the user's id based on the username.
@@ -46,6 +42,6 @@ export async function GET(request) {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.end();
+    await client.release();
   }
 }
