@@ -5,10 +5,26 @@ import bcrypt from 'bcrypt';
 
 export async function POST(request) {
 const body = await request.json();
+const validPasswordRegex = /^[a-zA-Z0-9!?]{8,}$/;
+const validUsernameRegex = /^[a-zA-Z0-9_]{1,16}$/;
 
   if (!body.username || !body.password || !body.inviteCode) {
     return new Response(JSON.stringify({ error: "username, password, and invite code are required." }), {
       status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (!validUsernameRegex.test(body.username)) {
+    return new Response(JSON.stringify({ error: "Username must be 1-16 characters long and contain only letters, numbers, and underscores." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (!validPasswordRegex.test(body.password)) {
+    return new Response(JSON.stringify({ error: "Password must be at least 8 characters and can only contain letters, numbers, ! and ?. Underscores are not allowed." }), {
+      status: 403,
       headers: { "Content-Type": "application/json" },
     });
   }

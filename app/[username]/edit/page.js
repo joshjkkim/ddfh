@@ -9,8 +9,10 @@ import {
   Save, 
   Upload,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Mail,
 } from "lucide-react";
+import { FaTwitter, FaDiscord, FaTelegramPlane, FaInstagram, FaYoutube } from 'react-icons/fa';
 
 export default function EditProfilePage() {
   const { username } = useParams();
@@ -24,7 +26,13 @@ export default function EditProfilePage() {
     username: "",
     bio: "",
     avatar_key: "",
-    banner_key: ""
+    banner_key: "",
+    email: "",
+    discord: "",
+    telegram: "",
+    youtube: "",
+    instagram: "",
+    twitter: "",
   });
   
   const [avatarFile, setAvatarFile] = useState(null);
@@ -91,7 +99,13 @@ export default function EditProfilePage() {
         username: userData.username || "",
         bio: userData.bio || "",
         avatar_key: avatarUrl || "",
-        banner_key: bannerUrl || ""
+        banner_key: bannerUrl || "",
+        youtube: userData.youtube || "",
+        instagram: userData.instgram || "",
+        discord: userData.discord || "",
+        telegram: userData.telegram || "",
+        email: userData.email || "",
+        twitter: userData.twitter || "",
       });
   
       setLoading(false);
@@ -152,6 +166,13 @@ export default function EditProfilePage() {
       formData.append("newUsername", formValues.username);
       formData.append("oldUsername", username)
       formData.append("bio", formValues.bio);
+      formData.append("email", formValues.email);
+      formData.append("instagram", formValues.instagram);
+      formData.append("discord", formValues.discord);
+      formData.append("telegram", formValues.telegram);
+      formData.append("twitter", formValues.twitter);
+      formData.append("youtube", formValues.youtube);
+      
       
       if (avatarFile) {
         formData.append("avatar_img", avatarFile);
@@ -321,6 +342,99 @@ export default function EditProfilePage() {
                   Recommended: 1500×500px, 3:1 aspect ratio
                 </p>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                  <Mail className="inline mr-2" />
+                  Email (Username)
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formValues.email || ""}
+                  onChange={handleInputChange}
+                  placeholder="your@email.com"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="discord" className="block text-sm font-medium text-gray-300 mb-1">
+                  <FaDiscord className="inline mr-2" />
+                  Discord Username
+                </label>
+                <input
+                  type="text"
+                  id="discord"
+                  name="discord"
+                  value={formValues.discord || ""}
+                  onChange={handleInputChange}
+                  placeholder="Your Discord username"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="telegram" className="block text-sm font-medium text-gray-300 mb-1">
+                  <FaTelegramPlane className="inline mr-2" />
+                  Telegram Username
+                </label>
+                <input
+                  type="text"
+                  id="telegram"
+                  name="telegram"
+                  value={formValues.telegram || ""}
+                  onChange={handleInputChange}
+                  placeholder="Your Telegram username"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="instagram" className="block text-sm font-medium text-gray-300 mb-1">
+                  <FaInstagram className="inline mr-2" />
+                  Instagram Username
+                </label>
+                <input
+                  type="text"
+                  id="instagram"
+                  name="instagram"
+                  value={formValues.instagram || ""}
+                  onChange={handleInputChange}
+                  placeholder="Your Instagram Username"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="twitter" className="block text-sm font-medium text-gray-300 mb-1">
+                  <FaTwitter className="inline mr-2" />
+                  Twitter Username
+                </label>
+                <input
+                  type="text"
+                  id="twitter"
+                  name="twitter"
+                  value={formValues.twitter || ""}
+                  onChange={handleInputChange}
+                  placeholder="@yourtwitter"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="twitter" className="block text-sm font-medium text-gray-300 mb-1">
+                  <FaYoutube className="inline mr-2" />
+                  Youtube Username
+                </label>
+                <input
+                  type="text"
+                  id="twitter"
+                  name="twitter"
+                  value={formValues.youtube || ""}
+                  onChange={handleInputChange}
+                  placeholder="@youryoutube"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            </div>
               
               {/* Form Actions */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
@@ -350,6 +464,7 @@ export default function EditProfilePage() {
                 </button>
               </div>
             </div>
+
           </form>
         </div>
       </div>

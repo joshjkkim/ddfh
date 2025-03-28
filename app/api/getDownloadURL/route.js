@@ -23,7 +23,7 @@ export async function GET(request) {
 
   // Create a command to get the object from your S3 bucket
   const command = new GetObjectCommand({
-    Bucket: 'ddfh', // Replace with your actual bucket name if different
+    Bucket: process.env.AWS_S3_BUCKET, // Replace with your actual bucket name if different
     Key: filename,
   });
 

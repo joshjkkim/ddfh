@@ -16,6 +16,23 @@ export async function POST(request) {
     );
   }
 
+  const validPasswordRegex = /^[a-zA-Z0-9!?]{8,}$/;
+  const validUsernameRegex = /^[a-zA-Z0-9_]{1,16}$/;
+
+  if (!validUsernameRegex.test(username)) {
+    return new Response(JSON.stringify({ error: "Username must be 1-16 characters long and contain only letters, numbers, and underscores." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (!validPasswordRegex.test(password)) {
+    return new Response(JSON.stringify({ error: "Password must be at least 8 characters and can only contain letters, numbers, ! and ?. Underscores are not allowed." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const client = await pool.connect();
 
   try {

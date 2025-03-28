@@ -38,10 +38,14 @@ export async function DELETE(request, { params } ) {
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
+    const selectRole = await client.query(
+      `SELECT * FROM users WHERE id = $1 AND username = $2`, [session.id, session.username]
+    )
+
     const postAuthorId = selectResult.rows[0].author_id.toString();
 
     // Ensure the session's user is the owner of the post
-    if (session.id.toString() !== postAuthorId) {
+    if (session.id.toString() !== postAuthorId && selectRole.rows[0].role !== "moderator" && selectRole.rows[0].role !== "admin") {
       return new Response(
         JSON.stringify({ error: "You can only delete your own posts." }),
         { status: 403, headers: { "Content-Type": "application/json" } }

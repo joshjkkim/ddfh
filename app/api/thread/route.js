@@ -3,7 +3,7 @@ import pool from "../../lib/db";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const title = searchParams.get("title");
+  const title = decodeURIComponent(searchParams.get("title"));
   
   if (!title) {
     return new Response(JSON.stringify({ error: "No title provided" }), {

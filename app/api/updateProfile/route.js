@@ -18,6 +18,12 @@ export async function PUT(request) {
     const newUsername = formData.get("newUsername");
     const oldUsername = formData.get("oldUsername");
     const bio = formData.get("bio") || null;
+    const instagram = formData.get("instagram") || null;
+    const email = formData.get("email") || null;
+    const discord = formData.get("discord") || null;
+    const youtube = formData.get("youtube") || null;
+    const twitter = formData.get("twitter") || null;
+    const telegram = formData.get("telegram") || null;
     
     // Get the token from the request's cookies
     const cookieStore = await cookies();
@@ -135,11 +141,17 @@ export async function PUT(request) {
       SET username = $1,
           bio = $2,
           avatar_key = COALESCE($3, avatar_key),
-          banner_key = COALESCE($4, banner_key)
+          banner_key = COALESCE($4, banner_key),
+          email = $6,
+          discord = $7,
+          telegram = $8,
+          instagram = $9,
+          twitter = $10,
+          youtube = $11
       WHERE username = $5
       RETURNING username, bio, avatar_key, banner_key
     `;
-    const values = [newUsername, bio, avatarKey, bannerKey, oldUsername];
+    const values = [newUsername, bio, avatarKey, bannerKey, oldUsername, email, discord, telegram, instagram, twitter, youtube];
     const result = await client.query(updateQuery, values);
     client.release();
 

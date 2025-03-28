@@ -5,6 +5,7 @@ import { useSearchParams, useParams } from "next/navigation";
 import { importKey } from "../../lib/encrypt"; // Adjust path accordingly
 import { Key, Lock, Download, AlertTriangle, Eye, CheckCircle, Lollipop, FileText } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function SharePage() {
   const params = useParams();
@@ -188,12 +189,19 @@ export default function SharePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-0 m-0 overflow-hidden relative">
-  
-      
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-gray-900 text-gray-100 p-0 m-0 overflow-hidden relative"
+    > 
       <header className="py-4 px-6 bg-gradient-to-r from-cyan-950 via-blue-950 to-purple-950 bg-opacity-70 backdrop-blur-sm border-b border-gray-700">
         <Link href="/">
-        <div className="flex items-center justify-center mb-3 cursor-pointer">
+        <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center mb-3 cursor-pointer"
+          >
           <div className="relative mt-2">
             <Lollipop className="h-12 w-12 text-cyan-400 mr-2" />
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
@@ -201,7 +209,7 @@ export default function SharePage() {
           <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
             DDFH
           </h1>
-        </div>
+        </motion.div>
       </Link>
       </header>
       
@@ -309,6 +317,14 @@ export default function SharePage() {
             </div>
           )}
           
+          <AnimatePresence>
+            {(previewText || previewUrl) && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-8"
+              >
           {(previewText || previewUrl) && (
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
@@ -379,6 +395,9 @@ export default function SharePage() {
               </div>
             </div>
           )}
+          </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
         <div className="text-center mt-8 text-gray-500 text-sm space-y-1">
@@ -386,6 +405,6 @@ export default function SharePage() {
           <p>Only someone with the correct key can access the contents.</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

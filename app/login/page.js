@@ -130,7 +130,7 @@ export default function LoginPage() {
           Don't have an account? <a href="/register" className="text-cyan-400 hover:underline">Register here</a>.
         </p>
         <p className="mt-4 text-center text-gray-400 text-sm">
-         Forgot password? <a href="/recover" className="text-red-400 hover:underline">Click here</a>.
+         Forgot password? <a href="/changepass" className="text-red-400 hover:underline">Click here</a>.
         </p>
       </div>
     </div>

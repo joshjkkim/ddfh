@@ -67,7 +67,7 @@ export default function RecoveryPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center">
       <div className="bg-gray-900 bg-opacity-75 rounded-lg shadow-xl p-8 max-w-md w-full">
         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 text-center mb-6">
-          Account Recovery
+          Password Change
         </h1>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         {success && <p className="text-green-500 text-center mb-4">Recovery successful!</p>}

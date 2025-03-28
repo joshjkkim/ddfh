@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
 export async function POST(request, { params }) {
-  const { threadTitle } = await params; // threadTitle from URL params
-
+  let { threadTitle } = await params; // threadTitle from URL params
+  threadTitle = decodeURIComponent(threadTitle)
+  console.log(threadTitle)
   // Parse JSON body for post data
   let { shareableLink, panelKey, description } = await request.json();
 
@@ -34,7 +35,7 @@ export async function POST(request, { params }) {
   try {
     // Look up the thread by title (assumes titles/slugs are unique)
     const threadQuery = `
-      SELECT id FROM threads
+      SELECT id, allowed_roles FROM threads
       WHERE title = $1
     `;
     const threadResult = await client.query(threadQuery, [threadTitle]);
@@ -44,6 +45,25 @@ export async function POST(request, { params }) {
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
+    const allowedRoles = threadResult.rows[0].allowed_roles;
+    if (!allowedRoles || allowedRoles.length === 0) {
+      // If no roles are allowed, perhaps this thread is disabled.
+      return new Response(
+        JSON.stringify({ error: "Thread not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const userRole = await client.query(
+      `SELECT * FROM users WHERE id = $1 AND username = $2`, [session.id, session.username]
+    )
+
+    if (!allowedRoles.includes(userRole.rows[0].role)) {
+      return new Response(
+        JSON.stringify({ error: "You are not authorized to post in this thread." }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const threadId = threadResult.rows[0].id;
 
     // Variables to store file name and size if provided

@@ -17,7 +17,7 @@ export async function GET(request) {
   try {
     if(!id) {
       const result = await client.query(
-        "SELECT username, role, created_at, reputation, post_count, bio, avatar_key, id, banner_key FROM users WHERE username = $1",
+        "SELECT username, role, created_at, reputation, post_count, bio, avatar_key, id, banner_key, email, discord, twitter, instagram, telegram, youtube FROM users WHERE username = $1",
         [username]
       );
   
@@ -34,7 +34,7 @@ export async function GET(request) {
       );
     } else {
         const result = await client.query(
-          "SELECT username, role, created_at, reputation, post_count, bio, avatar_key, id, banner_key FROM users WHERE id = $1",
+          "SELECT username, role, created_at, reputation, post_count, bio, avatar_key, id, banner_key, email, discord, twitter, instagram, telegram, youtube FROM users WHERE id = $1",
           [id]
         );
     

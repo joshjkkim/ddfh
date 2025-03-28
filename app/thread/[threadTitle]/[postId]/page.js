@@ -16,7 +16,8 @@ function formatFileSize(bytes) {
 }
 
 export default function PostDetailPage() {
-  const { threadTitle, postId } = useParams();
+  let { threadTitle, postId } = useParams();
+  threadTitle = decodeURIComponent(threadTitle)
   const router = useRouter();
   const [post, setPost] = useState(null);
   const [replies, setReplies] = useState([]);
@@ -24,11 +25,12 @@ export default function PostDetailPage() {
   const [error, setError] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState();
   const [copyStatus, setCopyStatus] = useState(false);
   const [editStatus, setEditStatus] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formValues, setFormValues] = useState({content: ""})
+  const [user, setUser] = useState(null);
 
   // Fetch session data
   useEffect(() => {
@@ -47,6 +49,26 @@ export default function PostDetailPage() {
     }
     fetchSession();
   }, []);
+
+  useEffect(() => {
+    if (!session) return; // don't run until session is defined
+    if (user) return;
+  
+    async function fetchUser() {
+      try {
+        const res = await fetch(`/api/getUser?username=${encodeURIComponent(session.username)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+        } else {
+          router.push("/");
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      }
+    }
+    fetchUser();
+  }, [session, user]);
 
   // Fetch the post detail and its replies using the dynamic route parameters
   useEffect(() => {
@@ -213,7 +235,7 @@ export default function PostDetailPage() {
         {/* Main Post Details */}
         <div className="bg-gray-800/80 border border-gray-700 rounded-xl p-6 shadow-lg mb-8 relative">
           {/* Delete Button for Main Post (if session user is owner) */}
-          {session && session.id === post.author_id && (
+          {session && user && (session.id === post.author_id || user.role === 'moderator' || user.role === 'admin') && (
             <div className="flex gap-5 justify-end">
               <button 
                 onClick={() => setEditStatus(!editStatus)}
@@ -243,7 +265,8 @@ export default function PostDetailPage() {
               <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-white">{post.author_username}</h1>
               <div className="text-gray-400 text-sm mb-4">
-                {new Date(post.created_at).toLocaleString(undefined, {
+                Post ID: {post.id} <br></br>
+                 {new Date(post.created_at).toLocaleString(undefined, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',

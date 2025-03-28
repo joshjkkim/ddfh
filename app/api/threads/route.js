@@ -9,7 +9,7 @@ export async function GET(request) {
       SELECT t.id, t.title, t.description, t.created_at, t.updated_at, u.username AS created_by_username
       FROM threads t
       JOIN users u ON t.created_by = u.id
-      ORDER BY t.created_at DESC
+      ORDER BY t.created_at ASC
     `);
     return new Response(JSON.stringify(result.rows), {
       status: 200,

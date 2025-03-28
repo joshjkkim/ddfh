@@ -6,6 +6,8 @@ import { generateAESKey, encryptData, exportKey } from "./lib/encrypt"; // adjus
 import { buf as crc32Buffer } from "crc-32";
 import { useRouter } from "next/navigation";
 import { solveChallenge } from './utils/solveChallenge';
+import { motion, AnimatePresence } from "framer-motion"
+
 
 // ...
 // Constants
