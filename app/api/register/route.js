@@ -1,5 +1,5 @@
 import pool from '../../lib/db';
-import bip39 from 'bip39';
+import * as bip39 from 'bip39';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 

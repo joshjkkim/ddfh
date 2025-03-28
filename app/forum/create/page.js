@@ -25,7 +25,7 @@ export default function CreateThreadPage() {
         }
       }
       fetchSession();
-    }, []);
+    }, [router]);
 
     useEffect(() => {
       async function fetchUserData() {
@@ -44,7 +44,7 @@ export default function CreateThreadPage() {
       if (session?.username && !session.role) {
         fetchUserData();
       }
-    }, [session]);
+    }, [session, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

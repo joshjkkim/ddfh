@@ -152,7 +152,7 @@ export default function CreateMarketPostPage() {
         
         <div className="bg-gray-800 p-6 md:p-8 rounded-lg shadow-lg">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">Create Marketplace Post</h1>
-          <p className="text-gray-400 mb-6">Share your file with the community in "{decodedThreadTitle}"</p>
+          <p className="text-gray-400 mb-6">Share your file with the community in {decodedThreadTitle}</p>
           
           {errors.general && (
             <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-md flex items-start">
@@ -250,7 +250,7 @@ export default function CreateMarketPostPage() {
                 )}
                 <div className="flex justify-between mt-1">
                   <p className="text-xs text-gray-400">
-                    Add details about your file to help others understand what you're sharing
+                    Add details about your file to help others understand what you are sharing
                   </p>
                   <p className={`text-xs ${charCount > MAX_CHAR_COUNT ? "text-red-500" : "text-gray-400"}`}>
                     {charCount}/{MAX_CHAR_COUNT}

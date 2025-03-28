@@ -133,7 +133,7 @@ export default function ReputationFormPage() {
         throw new Error(data.error || "Failed to submit reputation.");
       }
       
-      setSuccessMessage(`Successfully submitted ${numericReputation > 0 ? '+' : ''}${numericReputation} reputation to ${recipient}!`);
+      setSuccessMessage(`Successfully submitted ${numericReputation > 0 ? "+" : ""}${numericReputation} reputation to ${recipient}!`);
       
       // Reset form
       setFormValues({
@@ -205,7 +205,7 @@ export default function ReputationFormPage() {
           <div className="flex items-center mb-6">
             <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center mr-4">
               {user.profileImage ? (
-                <img src={user.profileImage} alt={recipient} className="w-full h-full rounded-full object-cover" />
+                <Image src={user.profileImage} alt={recipient} className="w-full h-full rounded-full object-cover" />
               ) : (
                 <span className="text-xl font-bold">{recipient.charAt(0).toUpperCase()}</span>
               )}

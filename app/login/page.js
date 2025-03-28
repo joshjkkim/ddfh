@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, Lock, LogIn } from "lucide-react";
+import Link from "next/link";
 
 const validPasswordRegex = /^[a-zA-Z0-9!?]{8,}$/;
 const validUsernameRegex = /^[a-zA-Z0-9_]{1,16}$/;
@@ -30,7 +31,7 @@ export default function LoginPage() {
       }
     }
     fetchSession();
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,11 +128,11 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="mt-4 text-center text-gray-400 text-sm">
-          Don't have an account? <a href="/register" className="text-cyan-400 hover:underline">Register here</a>.
-        </p>
-        <p className="mt-4 text-center text-gray-400 text-sm">
-         Forgot password? <a href="/changepass" className="text-red-400 hover:underline">Click here</a>.
-        </p>
+        Don't have an account? <Link href="/register" className="text-cyan-400 hover:underline">Register here</Link>.
+      </p>
+      <p className="mt-4 text-center text-gray-400 text-sm">
+        Forgot password? <Link href="/changepass" className="text-red-400 hover:underline">Click here</Link>.
+      </p>
       </div>
     </div>
   );

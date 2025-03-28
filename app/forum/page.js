@@ -32,7 +32,7 @@ export default function ForumPage() {
       }
     }
     fetchSession();
-  }, []);
+  }, [router]);
 
   // Fetch forum threads from the API
   useEffect(() => {
