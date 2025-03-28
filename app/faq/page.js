@@ -96,7 +96,7 @@ export default function FAQ() {
               </div>
               <button 
                 onClick={() => router.push("/")}
-                className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-medium py-2 px-4 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 transform hover:scale-105"
+                className="text-sm md:text-md lg:text-lg bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-medium py-2 px-4 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 transform hover:scale-105"
               >
                 Back Home
               </button>

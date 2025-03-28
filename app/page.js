@@ -389,55 +389,58 @@ export default function Home() {
           </div>
         </header>
         
-        <div className="flex flex-row justify-center gap-3" >
-          <div className="mt-8 text-center">
-          <button
-            onClick={() => router.push("/panel")}
-            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-400 hover:from-green-800 hover:to-green-600 hover:scale-110 text-white rounded-full transition-all ease-in-out duration-200 min-w-[150px] text-center justify-center"
-            onMouseEnter={() => setIsHovered(true)}  // Set hover state to true when mouse enters
-            onMouseLeave={() => setIsHovered(false)}  // Set hover state to false when mouse leaves
-          >
-            {isHovered ? (
-              <Eye className="h-5 w-5 mr-2" />
-            ) : (
-              <EyeClosed className="h-5 w-5 mr-2" />
-            )}
-            <strong>Go to Panel</strong>
-          </button>
+        <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
+          <div className="mt-8 text-center w-full sm:w-auto">
+            <button
+              onClick={() => router.push("/panel")}
+              className="w-full sm:min-w-[150px] inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-400 hover:from-green-800 hover:to-green-600 hover:scale-105 text-white rounded-full transition-all ease-in-out duration-200"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              {isHovered ? (
+                <Eye className="h-5 w-5 mr-2" />
+              ) : (
+                <EyeClosed className="h-5 w-5 mr-2" />
+              )}
+              <strong>Go to Panel</strong>
+            </button>
           </div>
 
-          <div className="mt-8 text-center">
-          <button
-            onClick={() => router.push("/login")}
-            className="inline-flex px-4 py-2 bg-gradient-to-r from-green-600 via-green-400 to-green-600 hover:from-green-800 hover:via-green-600 hover:to-green-800 hover:scale-110 text-white rounded-full transition-all ease-in-out duration-200 min-w-[150px] justify-center"
-            onMouseEnter={() => setIsHovered(true)}  // Set hover state to true when mouse enters
-            onMouseLeave={() => setIsHovered(false)}  // Set hover state to false when mouse leaves
-          >
-            {isHovered ? (
-              <UserCheck className="h-5 w-5 mr-2" />
-            ) : (
-              <User className="h-5 w-5 mr-2" />
-            )}
-            <strong>Login: <span className="text-sm">{session ? session.username : "Logged Out"}</span></strong>
-          </button>
+          <div className="mt-8 text-center w-full sm:w-auto">
+            <button
+              onClick={() => router.push("/login")}
+              className="w-full sm:min-w-[150px] inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-600 via-green-400 to-green-600 hover:from-green-800 hover:via-green-600 hover:to-green-800 hover:scale-105 text-white rounded-full transition-all ease-in-out duration-200"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              {isHovered ? (
+                <UserCheck className="h-5 w-5 mr-2" />
+              ) : (
+                <User className="h-5 w-5 mr-2" />
+              )}
+              <strong>
+                Login: <span className="text-sm">{session ? session.username : "Logged Out"}</span>
+              </strong>
+            </button>
           </div>
 
-          <div className="mt-8 text-center">
-          <button
-            onClick={() => router.push("/faq")}
-            className="inline-flex px-4 py-2 bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-800 hover:scale-110 text-white rounded-full transition-all ease-in-out duration-200 min-w-[150px] justify-center"
-            onMouseEnter={() => setIsHovered(true)}  // Set hover state to true when mouse enters
-            onMouseLeave={() => setIsHovered(false)}  // Set hover state to false when mouse leaves
-          >
-            {isHovered ? (
-              <MessageCircleWarning className="h-5 w-5 mr-2" />
-            ) : (
-              <MessageCircleQuestion className="h-5 w-5 mr-2" />
-            )}
-            <strong>FAQ</strong>
-          </button>
+          <div className="mt-8 text-center w-full sm:w-auto">
+            <button
+              onClick={() => router.push("/faq")}
+              className="w-full sm:min-w-[150px] inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-800 hover:scale-105 text-white rounded-full transition-all ease-in-out duration-200"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              {isHovered ? (
+                <MessageCircleWarning className="h-5 w-5 mr-2" />
+              ) : (
+                <MessageCircleQuestion className="h-5 w-5 mr-2" />
+              )}
+              <strong>FAQ</strong>
+            </button>
           </div>
         </div>
+
         <div className="max-w-2xl mx-auto relative">
           {!uploadComplete ? (
             <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-gray-700/50">
