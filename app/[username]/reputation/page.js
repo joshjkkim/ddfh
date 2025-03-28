@@ -129,7 +129,7 @@ export default function ReputationPage() {
                             alt={`${user.username}'s avatar`} 
                             className="w-20 h-20 rounded-full border-4 border-white/20 object-cover"
                         />
-                        <h1 className="text-3xl font-bold text-white">{user.username}'s Reputation: {user.reputation}</h1>
+                        <h1 className="text-3xl font-bold text-white">{user.username} Reputation: {user.reputation}</h1>
                     </div>
                 </Link>
 

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, Lock, UserPlus, Check, Download } from "lucide-react";
+import Link from "next/link";
 
 const validPasswordRegex = /^[a-zA-Z0-9!?]{8,}$/;
 const validUsernameRegex = /^[a-zA-Z0-9_]{1,16}$/;
@@ -184,7 +185,7 @@ export default function RegisterPage() {
               <h2 className="text-white font-bold mb-2">Important: Save Your Recovery Seed Phrase</h2>
               <p className="text-white break-all">{seedPhrase}</p>
               <p className="text-white mt-2">
-                This is the only time this seed phrase will be shown. Please store it securely – if you lose it, you won't be able to recover your account.
+                This is the only time this seed phrase will be shown. Please store it securely – if you lose it, you wont be able to recover your account.
               </p>
             </div>
             <div className="space-y-4">
@@ -213,9 +214,9 @@ export default function RegisterPage() {
         {!seedPhrase && (
           <p className="mt-4 text-center text-gray-400 text-sm">
             Already have an account?{" "}
-            <a href="/login" className="text-cyan-400 hover:underline">
+            <Link href="/login" className="text-cyan-400 hover:underline">
               Login here
-            </a>.
+            </Link>.
           </p>
         )}
       </div>

@@ -205,7 +205,7 @@ export default function ReputationFormPage() {
           <div className="flex items-center mb-6">
             <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center mr-4">
               {user.profileImage ? (
-                <Image src={user.profileImage} alt={recipient} className="w-full h-full rounded-full object-cover" />
+                <img src={user.profileImage} alt={recipient} className="w-full h-full rounded-full object-cover" />
               ) : (
                 <span className="text-xl font-bold">{recipient.charAt(0).toUpperCase()}</span>
               )}
