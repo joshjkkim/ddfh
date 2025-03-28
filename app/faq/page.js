@@ -143,28 +143,6 @@ export default function FAQ() {
             </div>
           </div>
 
-          <div className="mt-12 text-center">
-            <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-gray-700/30">
-              <h3 className="text-xl font-bold text-cyan-400 mb-4 flex items-center justify-center">
-                <HelpCircle className="h-5 w-5 mr-2" />
-                Still Have Questions?
-              </h3>
-              <p className="text-gray-300 mb-6">
-                Our team is here to help you with any additional questions you might have about our secure file sharing service.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="inline-flex items-center px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all duration-300 hover:scale-105">
-                  <MessageCircleQuestion className="h-5 w-5 mr-2" />
-                  Contact Support
-                </button>
-                <button className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full transition-all duration-300 hover:scale-105">
-                  <FileText className="h-5 w-5 mr-2" />
-                  View Code
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div className="mt-12 text-center text-gray-400 text-sm">
             <p className="mt-2">
               © {new Date().getFullYear()} DDFH. All rights reserved.

@@ -321,7 +321,7 @@ export default function Home() {
   
       // 🔥 Step 7: Display Share Link and Keys
       setPublicShareLink(
-        `http://localhost:3000/share/${shareId}?filename=${encodeURIComponent(s3Filename)}&iv=${encodeURIComponent(ivBase64)}`
+        `https://ddfh.org/share/${shareId}?filename=${encodeURIComponent(s3Filename)}&iv=${encodeURIComponent(ivBase64)}`
       );
       setPrivateKey(exportedKey);
       setIsGeneratingKeys(false);
@@ -697,7 +697,7 @@ export default function Home() {
                     <button 
                       onClick={() =>
                         copyToClipboard(
-                          `http://localhost:3000/short/${shortUrl}`,
+                          `https://ddfh.org/short/${shortUrl}`,
                           'short'
                         )
                       }
@@ -706,7 +706,7 @@ export default function Home() {
                       {copyStatus.short ? 'Copied!' : 'Copy'}
                     </button>
                     <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800 mt-4">
-                      http://localhost:3000/short/{shortUrl}
+                      https://ddfh.org/short/{shortUrl}
                     </div>
                   </>
                 )}
