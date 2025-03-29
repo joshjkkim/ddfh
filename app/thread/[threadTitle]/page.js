@@ -8,7 +8,8 @@ import Link from "next/link";
 import Header from "../../components/Header";
 
 export default function ThreadPage() {
-  const { threadTitle } = useParams();
+  let { threadTitle } = useParams();
+  threadTitle = decodeURIComponent(threadTitle)
   const router = useRouter();
   const [thread, setThread] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -134,7 +135,7 @@ export default function ThreadPage() {
         {/* Post Reply Button */}
         {session && (
           <div className="mb-6 flex justify-end">
-            <Link href={`/thread/${threadTitle}/post`}>
+            <Link href={`/thread/${encodeURIComponent(threadTitle)}/post`}>
               <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium transition-colors">
                 Post Reply
               </button>

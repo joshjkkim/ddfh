@@ -65,9 +65,9 @@ if (!body.recipient || !body.reputation || !body.message) {
     }
 
     const alreadyGiven = await client.query(
-        `SELECT * FROM reputation WHERE giver_username = $1`,
+        `SELECT * FROM reputation WHERE giver_id = $1 AND receiver_id = $2`,
         
-        [session.username]
+        [session.id, result.rows[0].id]
     );
 
     if (alreadyGiven.rowCount !== 0) {
@@ -108,10 +108,10 @@ if (!body.recipient || !body.reputation || !body.message) {
     );
 
     const res = await client.query(
-        `INSERT INTO reputation (receiver_id, receiver_username, giver_id, giver_username, amount, message)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO reputation (receiver_id, giver_id, amount, message)
+         VALUES ($1, $2, $3, $4)
          RETURNING receiver_id`,
-        [result.rows[0].id, body.recipient, session.id, session.username, body.reputation, body.message]
+        [result.rows[0].id, session.id, body.reputation, body.message]
     );
 
     return new Response(JSON.stringify({ id: res.rows[0].receiver_id }), {

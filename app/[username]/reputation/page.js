@@ -110,6 +110,8 @@ export default function ReputationPage() {
     );
     }
 
+    const avatarSrc = avatar || "/defaultuser.png";
+
     return (
         <div className="relative min-h-screen">
             {/* Background Image */}
@@ -125,7 +127,7 @@ export default function ReputationPage() {
                 <Link href={`/${user.username}`}>
                     <div className="flex items-center mb-8 space-x-4 hover:underline hover:text-cyan-800 p-2 rounded-lg">
                         <img 
-                            src={avatar ?? "/defaultavatar.png"} 
+                            src={avatarSrc} 
                             alt={`${user.username}'s avatar`} 
                             className="w-20 h-20 rounded-full border-4 border-white/20 object-cover"
                         />
