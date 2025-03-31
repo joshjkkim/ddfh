@@ -78,7 +78,7 @@ export default function EditProfilePage() {
       const userData = await res.json();
   
       const avatarPromise = userData.avatar_key
-        ? fetch(`/api/getDownloadURL?filename=${encodeURIComponent(userData.avatar_key)}`)
+        ? fetch(`/api/getImageURL?filename=${encodeURIComponent(userData.avatar_key)}`)
             .then(res => res.ok ? res.json() : Promise.reject(`Error fetching URL: ${res.status}`))
             .then(({ url }) => fetch(url).then(res => res.blob()))
             .then(blob => URL.createObjectURL(blob))
@@ -86,7 +86,7 @@ export default function EditProfilePage() {
         : Promise.resolve("");
   
       const bannerPromise = userData.banner_key
-        ? fetch(`/api/getDownloadURL?filename=${encodeURIComponent(userData.banner_key)}`)
+        ? fetch(`/api/getImageURL?filename=${encodeURIComponent(userData.banner_key)}`)
             .then(res => res.ok ? res.json() : Promise.reject(`Error fetching URL: ${res.status}`))
             .then(({ url }) => fetch(url).then(res => res.blob()))
             .then(blob => URL.createObjectURL(blob))

@@ -25,7 +25,7 @@ export default function ReputationPage() {
             setUser(data);
             setLoading(true);
             if(data.avatar_key) {
-                const avkey = await fetch(`/api/getDownloadURL?filename=${encodeURIComponent(data.avatar_key)}`);
+                const avkey = await fetch(`/api/getImageURL?filename=${encodeURIComponent(data.avatar_key)}`);
                 if (!avkey.ok) {
                 throw new Error(`Error fetching URL: ${avkey.status}`)
                 }
@@ -37,7 +37,7 @@ export default function ReputationPage() {
             }
     
             if(data.banner_key) {
-                const bakey = await fetch(`/api/getDownloadURL?filename=${encodeURIComponent(data.banner_key)}`);
+                const bakey = await fetch(`/api/getImageURL?filename=${encodeURIComponent(data.banner_key)}`);
                 if (!bakey.ok) {
                 throw new Error(`Error fetching URL: ${bakey.status}`);
                 }

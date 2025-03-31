@@ -43,7 +43,7 @@ export default function ProfilePage() {
         setUser(data);
 
         if(data.avatar_key) {
-            const avkey = await fetch(`/api/getDownloadURL?filename=${encodeURIComponent(data.avatar_key)}`);
+            const avkey = await fetch(`/api/getImageURL?filename=${encodeURIComponent(data.avatar_key)}`);
             if (!avkey.ok) {
             throw new Error(`Error fetching URL: ${avkey.status}`)
             }
@@ -55,7 +55,7 @@ export default function ProfilePage() {
         }
 
         if(data.banner_key) {
-            const bakey = await fetch(`/api/getDownloadURL?filename=${encodeURIComponent(data.banner_key)}`);
+            const bakey = await fetch(`/api/getImageURL?filename=${encodeURIComponent(data.banner_key)}`);
             if (!bakey.ok) {
             throw new Error(`Error fetching URL: ${bakey.status}`);
             }
