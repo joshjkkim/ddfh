@@ -125,9 +125,30 @@ export default function Home() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    const uploadedFile = e.dataTransfer.files && e.dataTransfer.files[0];
-    handleFile(uploadedFile);
+  
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      // Check file limits based on session status
+      if (session && totalFiles + droppedFiles.length > 10) {
+        return;
+      } else if (!session && totalFiles + droppedFiles.length > 4) {
+        return;
+      }
+      // Update total files count
+      setTotalFiles(totalFiles + droppedFiles.length);
+  
+      // Process each dropped file
+      let totalBatchSize = 0;
+      Array.from(droppedFiles).forEach((file) => {
+        handleFile(file);
+        totalBatchSize += file.size;
+      });
+  
+      // Update the total file size for the batch
+      setTotalFileSize(totalFileSize + totalBatchSize);
+    }
   };
+  
 
   // Handle file input change
   const handleChange = (e) => {
