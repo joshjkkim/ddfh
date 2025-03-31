@@ -1,16 +1,31 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import pool from "../../lib/db";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const filename = searchParams.get("filename");
+  const shareId = searchParams.get("shareId");
 
-  if (!filename) {
-    return new Response(JSON.stringify({ error: "Filename is required" }), {
+  if (!shareId) {
+    return new Response(JSON.stringify({ error: "Share ID is required" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  const client = await pool.connect()
+
+  const results = await client.query(
+    `SELECT s3_key FROM file_metadata WHERE share_id = $1`,
+    [shareId]
+  )
+
+  if(results.rows.length === 0) {
+    return new Response(JSON.stringify({ error: "Cannot find any matching Share IDs"}), {
+      status: 404,
+      headers: {"Content-Type": "application/json"}
+    })
+  } 
 
   // Initialize the S3 client using environment variables
   const s3Client = new S3Client({
@@ -22,15 +37,20 @@ export async function GET(request) {
   });
 
   // Create a command to get the object from your S3 bucket
-  const command = new GetObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET, // Replace with your actual bucket name if different
-    Key: filename,
+  const urlPromises = results.rows.map(async (row) => {
+    const filename = row.s3_key;
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: filename,
+    });
+    // Generate a pre-signed URL valid for 1 hour
+    return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
   });
 
+  const urls = await Promise.all(urlPromises);
   try {
-    // Generate a pre-signed URL valid for 1 hour (3600 seconds)
-    const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-    return new Response(JSON.stringify({ url }), {
+    console.log(urls)
+    return new Response(JSON.stringify({ urls }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
@@ -40,5 +60,7 @@ export async function GET(request) {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
+  } finally {
+    await client.release()
   }
 }

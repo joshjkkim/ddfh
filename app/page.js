@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircleQuestion, MessageCircleWarning, Upload, Shield, Key, Share2, FileText, Lock, RefreshCw, Sparkles, Lollipop, Info, Clock, Eye, EyeClosed, User, UserCheck, Scissors, FolderCog, Folder } from 'lucide-react';
+import { MessageCircleQuestion, MessageCircleWarning, Upload, Shield, Key, Share2, FileText, Lock, 
+  RefreshCw, Sparkles, Lollipop, Info, Clock, Eye, EyeClosed, User, UserCheck, Scissors, FolderCog, FileDigit, Tag, Cog, CookingPot } from 'lucide-react';
 import { generateAESKey, encryptData, exportKey } from "./lib/encrypt"; // adjust path accordingly
 import { buf as crc32Buffer } from "crc-32";
 import { useRouter } from "next/navigation";
 import { solveChallenge } from './utils/solveChallenge';
-import { motion, AnimatePresence } from "framer-motion"
+import formatFileSize from './utils/format';
 
 
 // ...
@@ -62,24 +63,9 @@ function generatePanelKey(length = 32) {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-function generateShortURL(length = 8) {
-  const array = new Uint8Array(length);
-  window.crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-}
-
-// Helper: format file size in a human-readable format
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
 export default function Home() {
   const [dragActive, setDragActive] = useState(false);
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isGeneratingKeys, setIsGeneratingKeys] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
@@ -89,6 +75,7 @@ export default function Home() {
   const fileInputRef = useRef(null);
   const [expiry, setExpiry] = useState(3600); // default to 1 hour
   const [expiryInput, setExpiryInput] = useState("1h");
+  const [totalFileSize, setTotalFileSize] = useState(0)
   const [progress, setProgress] = useState(0);
   const [maxAccesses, setMaxAccesses] = useState(10);
   const [copyStatus, setCopyStatus] = useState({
@@ -102,6 +89,8 @@ export default function Home() {
   const [isShortUrl, setIsShortUrl] = useState(false)
   const [shortUrl, setShortUrl] = useState("");
   const [session, setSession] = useState(null)
+  const [shareId, setShareId] = useState(null);
+  const [totalFiles, setTotalFiles] = useState(0);
 
   const router = useRouter();
 
@@ -143,8 +132,22 @@ export default function Home() {
   // Handle file input change
   const handleChange = (e) => {
     e.preventDefault();
-    const uploadedFile = e.target.files && e.target.files[0];
-    handleFile(uploadedFile);
+    const uploadedFiles = e.target.files;
+    if(session && totalFiles + uploadedFiles.length > 10) {
+      return;
+    } else if (!session && totalFiles + uploadedFiles.length > 4) {
+      return
+    }
+    setTotalFiles(totalFiles + uploadedFiles.length)
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      let totalBatchSize = 0;
+      Array.from(uploadedFiles).forEach((file) => {
+        handleFile(file);
+        totalBatchSize += file.size;
+      });
+
+      setTotalFileSize(totalFileSize + totalBatchSize);
+    }
   };
 
   // Process selected file and compute dynamic expiry
@@ -154,10 +157,11 @@ export default function Home() {
         alert("File size exceeds the 5 GB limit. Please choose a smaller file.");
         return;
       }
-      const allowedExpiry = computeMaxExpiry(uploadedFile.size);
-      setExpiry(allowedExpiry);
-      setExpiryInput(formatSeconds(allowedExpiry));
-      setFile(uploadedFile);
+      const fileMetadata = {
+        file: uploadedFile,
+        size: uploadedFile.size
+      };
+      setFiles((prevFiles) => [...prevFiles, fileMetadata]);
     }
   };
 
@@ -195,8 +199,8 @@ export default function Home() {
     const input = e.target.value;
     setExpiryInput(input);
     const parsed = parseDuration(input);
-    if (parsed !== null && file) {
-      const allowedMax = computeMaxExpiry(file.size);
+    if (parsed !== null && files.length > 0) {
+      const allowedMax = computeMaxExpiry(totalFileSize);
       setExpiry(parsed > allowedMax ? allowedMax : parsed);
     }
   };
@@ -204,18 +208,18 @@ export default function Home() {
   const shortenUrl = async () => {
     try {
       let shortUrlKey;
-      let isCustomUrl = false;
-      if(!session || !shortUrl) {
-        shortUrlKey = generateShortURL();
+      if(!shortUrl || !shareId) {
+        return;
       } else {
         shortUrlKey = shortUrl;
-        isCustomUrl = true;
       }
       let shareLink = publicShareLink;
 
       if(autoDecryptEnabled && privateKey) {
         shareLink = `${publicShareLink}&decryptionKey=${privateKey}`;
       }
+      
+      console.log("HI", shortUrlKey, shareLink)
 
       const res = await fetch('/api/shortUrl', {
         method: 'POST',
@@ -223,7 +227,7 @@ export default function Home() {
         body: JSON.stringify({
           shortUrlKey,
           fullLink: shareLink,
-          isCustomUrl: isCustomUrl
+          shareId: shareId,
         }),
       });
       if(!res.ok) {
@@ -238,8 +242,8 @@ export default function Home() {
     }
   }
   // Upload file with encryption
-  const uploadFile = async () => {
-    if (!file) return;
+  const uploadFiles = async () => {
+    if (files.length <= 0) return;
     setIsUploading(true);
     simulateProgress();
   
@@ -254,74 +258,77 @@ export default function Home() {
       console.log(`Challenge solved with nonce: ${nonce}`);
   
       const key = await generateAESKey();
-  
-      const fileBuffer = await file.arrayBuffer();
-      const { ciphertext, iv } = await encryptData(key, fileBuffer);
-      const computedChecksum = await computeCRC32Checksum(ciphertext);
-  
-      const exportedKey = await exportKey(key);
-  
-      const shareId = Math.random().toString(36).substring(2, 15);
-      const s3Filename = `${shareId}-${file.name}`;
-  
+      const share = Math.random().toString(36).substring(2, 15);
+      setShareId(share)
       const generatedPanelKey = generatePanelKey();
       setPanelKey(generatedPanelKey);
-  
-      const res = await fetch(
-        `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${file.size}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}`
-      );
-      if (!res.ok) {
-        throw new Error("Failed to obtain pre-signed POST");
+
+      for (const file of files) {
+        const fileBuffer = await file.file.arrayBuffer();
+        const { ciphertext, iv } = await encryptData(key, fileBuffer);
+        const computedChecksum = await computeCRC32Checksum(ciphertext);
+        
+        const s3Filename = `${share}-${file.file.name}`;
+    
+        const res = await fetch(
+          `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${totalFileSize}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}`
+        );
+        if (!res.ok) {
+          throw new Error("Failed to obtain pre-signed POST");
+        }
+
+        const presignedPost = await res.json();
+    
+        const formData = new FormData();
+        // Append all fields from presignedPost.fields
+        Object.entries(presignedPost.fields).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+        // Note: The field name for S3 must be "file"
+        formData.append("file", new Blob([ciphertext], { type: "application/octet-stream" }));
+    
+        const uploadRes = await fetch(presignedPost.url, {
+          method: 'POST',
+          body: formData,
+        });
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload file to S3");
+        }
+    
+        const ivBase64 = btoa(String.fromCharCode(...new Uint8Array(iv)));
+    
+        // Optional delay for UI purposes
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    
+        // 🔥 Step 6: Log Metadata to Postgres (Neon)
+        const expirationTimestamp = new Date(Date.now() + expiry * 1000).toISOString();
+        await fetch('/api/logFile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shareId: share,
+            originalFilename: file.file.name,
+            s3Key: s3Filename,
+            iv: ivBase64,
+            fileSize: file.size,
+            expirationTimestamp,
+            panelKey: generatedPanelKey,
+            timesAccessed: 0,
+            maxAccesses: maxAccesses,
+          }),
+        });
       }
 
-      const presignedPost = await res.json();
-  
-      const formData = new FormData();
-      // Append all fields from presignedPost.fields
-      Object.entries(presignedPost.fields).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
-      // Note: The field name for S3 must be "file"
-      formData.append("file", new Blob([ciphertext], { type: "application/octet-stream" }));
-  
-      const uploadRes = await fetch(presignedPost.url, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload file to S3");
-      }
-  
       setProgress(100);
       setIsUploading(false);
       setIsGeneratingKeys(true);
   
-      // Convert IV to base64
-      const ivBase64 = btoa(String.fromCharCode(...new Uint8Array(iv)));
-  
-      // Optional delay for UI purposes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-  
-      // 🔥 Step 6: Log Metadata to Postgres (Neon)
-      const expirationTimestamp = new Date(Date.now() + expiry * 1000).toISOString();
-      await fetch('/api/logFile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shareId,
-          originalFilename: file.name,
-          s3Key: s3Filename,
-          fileSize: file.size,
-          expirationTimestamp,
-          panelKey: generatedPanelKey,
-          timesAccessed: 0,
-          maxAccesses: maxAccesses,
-        }),
-      });
+      const exportedKey = await exportKey(key);
+      
   
       // 🔥 Step 7: Display Share Link and Keys
       setPublicShareLink(
-        `https://ddfh.org/share/${shareId}?filename=${encodeURIComponent(s3Filename)}&iv=${encodeURIComponent(ivBase64)}`
+        `https://ddfh.org/share/${share}`
       );
       setPrivateKey(exportedKey);
       setIsGeneratingKeys(false);
@@ -333,6 +340,7 @@ export default function Home() {
       alert("Failed to upload file. Please try again.");
     }
   };
+  
 
   // Copy text to clipboard with feedback
   const copyToClipboard = (text, type) => {
@@ -384,7 +392,23 @@ export default function Home() {
             </div>
             <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
               <Clock className="h-4 w-4 text-cyan-400 mr-1" />
-              <span className="text-xs text-gray-300">Time-limited sharing</span>
+              <span className="text-xs text-gray-300">Time-Limited Access</span>
+            </div>
+            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
+              <FileDigit className="h-4 w-4 text-orange-400 mr-1" />
+              <span className="text-xs text-gray-300">Max Accesses</span>
+            </div>
+            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
+              <CookingPot className="h-4 w-4 text-gray-400 mr-1" />
+              <span className="text-xs text-gray-300">Batch File Uploads</span>
+            </div>
+            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
+              <Tag className="h-4 w-4 text-purple-400 mr-1" />
+              <span className="text-xs text-gray-300">Custom URL Shorteners</span>
+            </div>
+            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
+              <Cog className="h-4 w-4 text-red-400 mr-1" />
+              <span className="text-xs text-gray-300">Anonymous Panel Control</span>
             </div>
           </div>
         </header>
@@ -458,6 +482,7 @@ export default function Home() {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  multiple
                   className="hidden"
                   onChange={handleChange}
                 />
@@ -468,19 +493,32 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {file ? (
-                  <div className="mt-6">
-                    <p className="text-xl font-medium mb-2 text-cyan-300">{file.name}</p>
-                    <p className="text-gray-400 mb-6">{formatFileSize(file.size)}</p>
-                    
+                {files.length > 0 ? (
+                  <div className="mt-6 space-y-6">
+                    {/* List all selected files */}
+                    <div className="space-y-4">
+                      {files.map((file, index) => (
+                        <div key={index} className="border p-4 rounded">
+                          <p className="text-xl font-medium text-cyan-300">{file.file.name}</p>
+                          <p className="text-gray-400">{formatFileSize(file.file.size)}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Global settings for the entire batch */}
+                    <p>{formatFileSize(totalFileSize)}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       <div>
-                        <label htmlFor="expiry" className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                        
+                        <label
+                          htmlFor="global-expiry"
+                          className="block text-sm font-medium text-gray-300 mb-2 flex items-center"
+                        >
                           <Clock className="h-4 w-4 mr-1" />
                           URL Expiry:
                           <div 
-                            className="ml-1 relative" 
-                            onMouseEnter={() => setShowTooltip("expiry")} 
+                            className="ml-1 relative"
+                            onMouseEnter={() => setShowTooltip("expiry")}
                             onMouseLeave={() => setShowTooltip("")}
                           >
                             <Info className="h-3 w-3 text-gray-500" />
@@ -493,17 +531,20 @@ export default function Home() {
                         </label>
                         <input
                           type="text"
-                          id="expiry"
+                          id="global-expiry"
                           value={expiryInput}
                           placeholder="e.g. 1h, 2d, 30m"
                           onClick={(e) => e.stopPropagation()}
-                          onChange={handleExpiryChange}
+                          onChange={handleExpiryChange}  // This now updates the global expiry for the batch
                           className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700/70 text-gray-100 px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="maxAccesses" className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                        <label
+                          htmlFor="global-maxAccesses"
+                          className="block text-sm font-medium text-gray-300 mb-2 flex items-center"
+                        >
                           <Eye className="h-4 w-4 mr-1" />
                           Max Accesses:
                           <div 
@@ -514,14 +555,14 @@ export default function Home() {
                             <Info className="h-3 w-3 text-gray-500" />
                             {showTooltip === "access" && (
                               <div className="absolute left-full ml-2 top-0 w-48 p-2 bg-gray-800 rounded-md text-xs z-10">
-                                Maximum number of times this file can be accessed.
+                                Maximum number of times these files can be accessed.
                               </div>
                             )}
                           </div>
                         </label>
                         <input
                           type="number"
-                          id="maxAccesses"
+                          id="global-maxAccesses"
                           value={maxAccesses}
                           placeholder="e.g. 5"
                           onClick={(e) => e.stopPropagation()}
@@ -530,20 +571,18 @@ export default function Home() {
                         />
                       </div>
                     </div>
-                    
-                    {file && (
-                      <p className="text-xs text-gray-400 mb-4">
-                        Maximum allowed expiry for this file is {formatSeconds(computeMaxExpiry(file.size))}.
-                        {expiry !== null && (
-                          <span> Current setting: {formatSeconds(expiry)}.</span>
-                        )}
-                      </p>
-                    )}
+
+                    {/* Display maximum allowed expiry computed for the batch */}
+                    <p className="text-xs text-gray-400 mb-4">
+                      Maximum allowed expiry for the batch is{" "}
+                      {formatSeconds(computeMaxExpiry(totalFileSize))}
+                      {expiry !== null && <span> Current setting: {formatSeconds(expiry)}.</span>}
+                    </p>
 
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        uploadFile();
+                        uploadFiles(); // Upload all files using the global settings
                       }}
                       disabled={isUploading}
                       className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50 transform hover:scale-105"
@@ -557,7 +596,7 @@ export default function Home() {
                         ) : (
                           <>
                             <Shield className="h-5 w-5 mr-3" />
-                            <span>Encrypt & Upload</span>
+                            <span>Encrypt & Upload All</span>
                           </>
                         )}
                       </div>
@@ -565,15 +604,17 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="mt-4">
-                    <p className="text-2xl font-medium mb-2 text-cyan-200">Drop your file here</p>
+                    <p className="text-2xl font-medium mb-2 text-cyan-200">Drop your files here</p>
                     <p className="text-gray-400">or click to browse</p>
                     <div className="mt-4 flex justify-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Up to 5GB</span>
+                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Up to 5GB each</span>
                       <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Auto-expiry</span>
                       <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Encrypted</span>
                     </div>
                   </div>
                 )}
+
+
               </div>
               
               {(isUploading || isGeneratingKeys) && (
@@ -677,7 +718,6 @@ export default function Home() {
                   >
                     Shorten URL?
                   </button>
-                  {session && (
                     <div className="mt-4">
                       <label className="flex items-center text-sm font-medium mb-2">
                         <Share2 size={16} className="mr-2" />
@@ -690,9 +730,7 @@ export default function Home() {
                         placeholder="Enter your custom key"
                         className="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       />
-                      <p className="mt-1 text-xs text-gray-400">Only available to valid users.</p>
                     </div>
-                  )}
                 </div>
                 
                 {isShortUrl && shortUrl && (
@@ -786,7 +824,7 @@ export default function Home() {
                       <FileText className="h-4 w-4 mr-1 text-cyan-400" />
                       <span className="text-xs font-medium">File Size</span>
                     </div>
-                    <p className="text-lg font-bold text-center">{formatFileSize(file.size)}</p>
+                    <p className="text-lg font-bold text-center">{formatFileSize(totalFileSize)}</p>
                   </div>
                 </div>
               </div>

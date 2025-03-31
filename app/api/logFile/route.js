@@ -36,8 +36,8 @@ export async function POST(request) {
     
     // If the check passes, proceed with the insert.
     const res = await client.query(
-      `INSERT INTO file_metadata (share_id, original_filename, s3_key, file_size, expiration_timestamp, panel_key, times_accessed, max_accesses)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO file_metadata (share_id, original_filename, s3_key, file_size, expiration_timestamp, panel_key, times_accessed, max_accesses, iv)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id`,
       [
         body.shareId,
@@ -47,7 +47,8 @@ export async function POST(request) {
         body.expirationTimestamp,
         body.panelKey,
         body.timesAccessed,
-        body.maxAccesses
+        body.maxAccesses,
+        body.iv
       ]
     );
     await client.release();

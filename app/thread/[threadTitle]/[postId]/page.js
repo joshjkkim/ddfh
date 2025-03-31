@@ -294,8 +294,10 @@ export default function PostDetailPage() {
                     <FilePen className="h-4 w-4 mr-1 text-blue-400" />
                     <span className="text-md font-medium">File Name</span>
                   </div>
-                  <p className="font-bold text-center">
-                    {new URL(post.share_file_key, "http://localhost").searchParams.get("filename").replace(/^[^-]*-/, "")}
+                  <p className="font-bold text-center flex">
+                      {Array.isArray(post.original_filenames)
+                        ? post.original_filenames.join(", ")
+                        : post.original_filenames}
                   </p>
                 </div>
               )}
@@ -303,7 +305,7 @@ export default function PostDetailPage() {
                 <div className="bg-gray-700/50 rounded-lg p-3 mb-4 flex items-center gap-2">
                   <div className="flex items-center mb-1">
                     <FileText className="h-4 w-4 mr-1 text-cyan-400" />
-                    <span className="text-md font-medium">File Size</span>
+                    <span className="text-md font-medium">Total File Size</span>
                   </div>
                   <p className="font-bold text-center">{formatFileSize(post.file_size)}</p>
                 </div>

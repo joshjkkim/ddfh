@@ -4,12 +4,19 @@ import jwt from "jsonwebtoken";
 
 export async function POST(request, { params }) {
   let { threadTitle } = await params; // threadTitle from URL params
-  threadTitle = decodeURIComponent(threadTitle)
-  console.log(threadTitle)
+  threadTitle = decodeURIComponent(threadTitle);
+  console.log(threadTitle);
   // Parse JSON body for post data
   let { shareableLink, panelKey, description } = await request.json();
 
-  // Get session token from cookies
+  let shareId
+  if(shareableLink && panelKey) {
+    const url = new URL(shareableLink)
+    const pathname = url.pathname; // "/share/4a7vxumwf2z"
+    const parts = pathname.split("/"); 
+    shareId = parts[2];
+  }
+
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   if (!token) {
@@ -19,7 +26,6 @@ export async function POST(request, { params }) {
     );
   }
 
-  // Verify token (assumes token contains user.id and user.username)
   let session;
   try {
     session = jwt.verify(token, process.env.JWT_SECRET);
@@ -33,7 +39,7 @@ export async function POST(request, { params }) {
   const client = await pool.connect();
 
   try {
-    // Look up the thread by title (assumes titles/slugs are unique)
+
     const threadQuery = `
       SELECT id, allowed_roles FROM threads
       WHERE title = $1
@@ -53,11 +59,17 @@ export async function POST(request, { params }) {
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
-    const userRole = await client.query(
-      `SELECT * FROM users WHERE id = $1 AND username = $2`, [session.id, session.username]
-    )
-
-    if (!allowedRoles.includes(userRole.rows[0].role)) {
+    const userRoleResult = await client.query(
+      `SELECT * FROM users WHERE id = $1 AND username = $2`, 
+      [session.id, session.username]
+    );
+    if (userRoleResult.rows.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "User not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    if (!allowedRoles.includes(userRoleResult.rows[0].role)) {
       return new Response(
         JSON.stringify({ error: "You are not authorized to post in this thread." }),
         { status: 403, headers: { "Content-Type": "application/json" } }
@@ -66,37 +78,33 @@ export async function POST(request, { params }) {
 
     const threadId = threadResult.rows[0].id;
 
-    // Variables to store file name and size if provided
-    let fileName = null;
-    let fileSize = null;
-
-    // If both shareableLink and panelKey are provided, validate file ownership
+    // For batch file uploads: if both shareableLink and panelKey are provided,
+    // look up all files that match the panelKey.
+    let realFiles = [];
     if (shareableLink && panelKey) {
       try {
-        const url = new URL(shareableLink);
-        fileName = url.searchParams.get("filename");
+        // Validate that shareableLink is a valid URL
+        new URL(shareableLink);
       } catch (err) {
         return new Response(
           JSON.stringify({ error: "Invalid file URL" }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
-      const realFile = await client.query(
-        `SELECT id, file_size FROM file_metadata WHERE s3_key = $1 AND panel_key = $2`,
-        [fileName, panelKey]
+      realFiles = await client.query(
+        `SELECT id, file_size, s3_key, original_filename FROM file_metadata WHERE panel_key = $1 AND share_id = $2`,
+        [panelKey, shareId]
       );
-      if (realFile.rows.length === 0) {
+      if (realFiles.rows.length === 0) {
         return new Response(
           JSON.stringify({ error: "Incorrect proof of file ownership" }),
           { status: 403, headers: { "Content-Type": "application/json" } }
         );
       }
-      fileSize = realFile.rows[0].file_size;
     } else {
       // For content-only posts, force both fields to be null
       shareableLink = null;
       panelKey = null;
-      fileSize = null;
     }
 
     // Rate limiting: Ensure user has waited 30 minutes between posts
@@ -121,13 +129,27 @@ export async function POST(request, { params }) {
     }
     await client.query(`UPDATE users SET last_post = NOW() WHERE id = $1`, [session.id]);
 
+    // Compute total file size for the batch (if batch upload)
+    let totalFileSize = null;
+    if (realFiles.rows.length > 0) {
+      totalFileSize = realFiles.rows.reduce(
+        (sum, file) => sum + parseInt(file.file_size, 10),
+        0
+      );
+    }
+
+    let fileNames = [];
+    if (realFiles.rows.length > 0) {
+      fileNames = realFiles.rows.map(file => file.original_filename);
+    }
+    console.log("FIle Size", totalFileSize)
     // Insert the post into the posts table.
     // For marketplace posts, is_marketplace is true and file-related fields are provided.
     const insertQuery = `
       INSERT INTO posts 
-        (thread_id, author_id, content, is_marketplace, share_file_key, file_size)
+        (thread_id, author_id, content, is_marketplace, share_file_key, file_size, original_filenames)
       VALUES 
-        ($1, $2, $3, $4, $5, $6)
+        ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id, content, created_at
     `;
     const values = [
@@ -136,7 +158,8 @@ export async function POST(request, { params }) {
       description || "",
       true, // is_marketplace flag set to true
       shareableLink, // may be null for content-only posts
-      fileSize       // may be null for content-only posts
+      totalFileSize,
+      fileNames
     ];
     const result = await client.query(insertQuery, values);
 
@@ -146,8 +169,12 @@ export async function POST(request, { params }) {
       [session.username]
     );
 
+    // Return the post along with file details for the batch.
     return new Response(
-      JSON.stringify({ post: result.rows[0] }),
+      JSON.stringify({ 
+        post: result.rows[0],
+        files: realFiles.rows  // Each row includes id, file_size, s3_key, and original_filename
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {

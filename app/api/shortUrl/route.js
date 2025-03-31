@@ -6,35 +6,13 @@ export async function POST(request) {
   const body = await request.json();
   const fullLink = body.fullLink;
   const shortUrlKey = body.shortUrlKey;
-  const isCustomUrl = body.isCustomUrl;
-  const { searchParams } = new URL(fullLink);
-  const s3Id = searchParams.get("filename");
+  const shareId = body.shareId
 
+  console.log(shareId)
   const client = await pool.connect();
-  let token = null;
-  let session = null;
 
-  // If a custom URL is requested, verify the user is valid and check for uniqueness
-  if (isCustomUrl) {
-    const cookieStore = await cookies();
-    token = cookieStore.get("token")?.value;
-    if (!token) {
-      await client.release();
-      return new Response(
-        JSON.stringify({ error: "No session token found" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-    try {
-      session = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      await client.release();
-      return new Response(
-        JSON.stringify({ error: "Invalid token" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-    // Check if the custom short URL key is already taken in the shortened_urls table
+  try {
+
     const customCheckQuery = `SELECT id FROM shortened_urls WHERE short_url_key = $1`;
     const customCheckResult = await client.query(customCheckQuery, [shortUrlKey]);
     if (customCheckResult.rowCount > 0) {
@@ -44,9 +22,7 @@ export async function POST(request) {
         { status: 409, headers: { "Content-Type": "application/json" } }
       );
     }
-  }
 
-  try {
     const uniqueUrl = await client.query(
       `SELECT * FROM shortened_urls WHERE full_link = $1`, [fullLink]
     )
@@ -60,15 +36,15 @@ export async function POST(request) {
     }
 
     const insertQuery = `
-      INSERT INTO shortened_urls (short_url_key, file_metadata_id, full_link)
+      INSERT INTO shortened_urls (short_url_key, share_id, full_link)
       VALUES (
         $1,
-        (SELECT id FROM file_metadata WHERE s3_key = $2),
+        $2,
         $3
       )
       RETURNING short_url_key
     `;
-    const res = await client.query(insertQuery, [shortUrlKey, s3Id, fullLink]);
+    const res = await client.query(insertQuery, [shortUrlKey, shareId, fullLink]);
     await client.release();
     return new Response(
       JSON.stringify({ shortUrlKey: res.rows[0].short_url_key }),

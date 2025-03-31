@@ -1,4 +1,3 @@
-// /app/api/deleteFile/route.js
 import pool from '../../lib/db';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
@@ -22,53 +21,59 @@ export async function DELETE(request) {
     },
   });
 
-  const client = await pool.connect()
+  const client = await pool.connect();
 
   try {
-    // First, select the record to get the S3 key
+    // Select all records with the given panel_key
     const selectResult = await client.query(
       `SELECT id, s3_key FROM file_metadata WHERE panel_key = $1`,
       [panelKey]
     );
 
     if (selectResult.rowCount === 0) {
-      return new Response(JSON.stringify({ error: "No matching record found." }), {
+      return new Response(JSON.stringify({ error: "No matching records found." }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const record = selectResult.rows[0];
+    const records = selectResult.rows;
 
-    // Delete the file from S3
-    const deleteCommand = new DeleteObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET, // Use your AWS_S3_BUCKET env variable
-      Key: record.s3_key,
-    });
-    await s3Client.send(deleteCommand);
-    console.log(`Deleted S3 object: ${record.s3_key}`);
+    // Delete each file from S3 concurrently
+    await Promise.all(records.map(async (record) => {
+      try {
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET,
+          Key: record.s3_key,
+        });
+        await s3Client.send(deleteCommand);
+        console.log(`Deleted S3 object: ${record.s3_key}`);
+      } catch (s3Error) {
+        console.error(`Error deleting S3 object ${record.s3_key}:`, s3Error);
+      }
+    }));
 
-    // Delete the record from the database
+    // Delete all records from file_metadata with this panel_key
     const result = await client.query(
       `DELETE FROM file_metadata WHERE panel_key = $1 RETURNING *`,
       [panelKey]
     );
 
-    console.log(`Deleted DB record with id ${result.rows[0].id}`);
+    console.log(`Deleted ${result.rowCount} DB record(s) with panel_key ${panelKey}`);
     return new Response(JSON.stringify({
-      message: "File and record deleted successfully.",
-      deletedRecord: result.rows[0],
+      message: "Files and records deleted successfully.",
+      deletedRecords: result.rows,
     }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Error deleting record or file:", err);
+    console.error("Error deleting records or files:", err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    await client.release();
+    client.release();
   }
 }

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 
 const getUserAvatar = async (avatarKey) => {
-  const avkey = await fetch(`/api/getDownloadURL?filename=${encodeURIComponent(avatarKey)}`);
+  const avkey = await fetch(`/api/getImageURL?filename=${encodeURIComponent(avatarKey)}`);
   if (!avkey.ok) {
     throw new Error(`Error fetching URL: ${avkey.status}`);
   }

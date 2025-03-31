@@ -2,10 +2,11 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { FilePen, CornerDownRight } from "lucide-react";
+import { FilePen, CornerDownRight, Ruler } from "lucide-react";
 import Avatar from "../../components/Avatar";
 import Link from "next/link";
 import Header from "../../components/Header";
+import formatFileSize from "../../utils/format";
 
 export default function ThreadPage() {
   let { threadTitle } = useParams();
@@ -189,21 +190,30 @@ export default function ThreadPage() {
                             })}
                           </div>
                         </div>
-                        <div className="bg-gray-900 rounded-lg p-2 text-gray-300 whitespace-pre-line">
-                        {post.share_file_key && (
-                         <>
-                            <span className="font-bold text-2xl inline-flex">
-                              <FilePen className="h-6 w-6 mr-1 text-blue-400" />
-                              {new URL(post.share_file_key, "http://localhost").searchParams.get("filename").replace(/^[^-]*-/, "")}
-                            </span>
-                            <br />
-                            </>
+                        <div className="bg-gray-900 rounded-lg p-4 text-gray-300">
+                          {post.share_file_key && (
+                            <div className="mb-4">
+                              <div className="flex flex-wrap items-center space-x-6">
+                                <span className="flex items-center text-lg font-bold">
+                                  <FilePen className="h-6 w-6 mr-1 text-blue-400" />
+                                  {Array.isArray(post.original_filenames)
+                                    ? post.original_filenames.join(", ")
+                                    : post.original_filenames}
+                                </span>
+                                <span className="flex items-center text-lg font-bold">
+                                  <Ruler className="h-6 w-6 mr-1 text-blue-400" />
+                                  {formatFileSize(post.file_size)}
+                                </span>
+                              </div>
+                            </div>
                           )}
-                            <span className="text-md inline-flex">
-                              <CornerDownRight className="h-6 w-6 mr-1 text-blue-400" />
+                          <div className="flex items-start">
+                            <CornerDownRight className="h-6 w-6 mr-1 text-blue-400 mt-1" />
+                            <p className="text-md leading-relaxed">
                               {post.content}
-                            </span>
+                            </p>
                           </div>
+                        </div>
                       </div>
                     </div>
                   </div>
