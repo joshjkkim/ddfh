@@ -216,7 +216,7 @@ export default function Home() {
       let shareLink = publicShareLink;
 
       if(autoDecryptEnabled && privateKey) {
-        shareLink = `${publicShareLink}&decryptionKey=${privateKey}`;
+        shareLink = `${publicShareLink}?decryptionKey=${privateKey}`;
       }
       
       console.log("HI", shortUrlKey, shareLink)
@@ -675,7 +675,7 @@ export default function Home() {
                     onClick={() =>
                       copyToClipboard(
                         autoDecryptEnabled
-                          ? `${publicShareLink}&decryptionKey=${privateKey}`
+                          ? `${publicShareLink}?decryptionKey=${privateKey}`
                           : publicShareLink,
                         'link'
                       )
@@ -687,7 +687,7 @@ export default function Home() {
                 </div>
                 <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
                   {autoDecryptEnabled
-                          ? `${publicShareLink}&decryptionKey=${privateKey}`
+                          ? `${publicShareLink}?decryptionKey=${privateKey}`
                           : publicShareLink}
                 </div>
                 <p className="text-xs text-gray-400 mt-2 flex items-center">
