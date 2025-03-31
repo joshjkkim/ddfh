@@ -367,51 +367,52 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-gray-100">
       <div className="container mx-auto px-4 py-16">
-        <header className="mb-16 text-center">
-          <div className="flex items-center justify-center mb-3">
-            <div className="relative">
-              <Lollipop className="h-12 w-12 text-cyan-400 mr-2" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
-            </div>
-            <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
-              DDFH
-            </h1>
+      <header className="mb-16 text-center px-4">
+        <div className="flex flex-col items-center justify-center mb-3">
+          <div className="relative mb-2">
+            <Lollipop className="h-12 w-12 text-cyan-400" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
           </div>
-          <p className="text-gray-300 max-w-xl mx-auto text-lg">
-            End-to-end encrypted file hosting with zero knowledge architecture.
-            Your files remain private, only accessible with the right key.
-          </p>
-          <div className="flex items-center justify-center gap-4 mt-4">
-            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
-              <Shield className="h-4 w-4 text-green-400 mr-1" />
-              <span className="text-xs text-gray-300">Zero-knowledge</span>
-            </div>
-            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
-              <Lock className="h-4 w-4 text-yellow-400 mr-1" />
-              <span className="text-xs text-gray-300">End-to-end encrypted</span>
-            </div>
-            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
-              <Clock className="h-4 w-4 text-cyan-400 mr-1" />
-              <span className="text-xs text-gray-300">Time-Limited Access</span>
-            </div>
-            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
-              <FileDigit className="h-4 w-4 text-orange-400 mr-1" />
-              <span className="text-xs text-gray-300">Max Accesses</span>
-            </div>
-            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
-              <CookingPot className="h-4 w-4 text-gray-400 mr-1" />
-              <span className="text-xs text-gray-300">Batch File Uploads</span>
-            </div>
-            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
-              <Tag className="h-4 w-4 text-purple-400 mr-1" />
-              <span className="text-xs text-gray-300">Custom URL Shorteners</span>
-            </div>
-            <div className="flex items-center bg-gray-800/40 px-3 py-1 rounded-full">
-              <Cog className="h-4 w-4 text-red-400 mr-1" />
-              <span className="text-xs text-gray-300">Anonymous Panel Control</span>
-            </div>
+          <h1 className="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
+            DDFH
+          </h1>
+        </div>
+        <p className="text-gray-300 max-w-md md:max-w-xl mx-auto text-base md:text-lg">
+          End-to-end encrypted file hosting with zero knowledge architecture.
+          Your files remain private, only accessible with the right key.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 mt-4">
+          <div className="flex items-center bg-gray-800/40 px-2 py-1 rounded-full">
+            <Shield className="h-4 w-4 text-green-400 mr-1" />
+            <span className="text-xs text-gray-300">Zero-knowledge</span>
           </div>
-        </header>
+          <div className="flex items-center bg-gray-800/40 px-2 py-1 rounded-full">
+            <Lock className="h-4 w-4 text-yellow-400 mr-1" />
+            <span className="text-xs text-gray-300">End-to-end encrypted</span>
+          </div>
+          <div className="flex items-center bg-gray-800/40 px-2 py-1 rounded-full">
+            <Clock className="h-4 w-4 text-cyan-400 mr-1" />
+            <span className="text-xs text-gray-300">Time-Limited Access</span>
+          </div>
+          <div className="flex items-center bg-gray-800/40 px-2 py-1 rounded-full">
+            <FileDigit className="h-4 w-4 text-orange-400 mr-1" />
+            <span className="text-xs text-gray-300">Max Accesses</span>
+          </div>
+          <div className="flex items-center bg-gray-800/40 px-2 py-1 rounded-full">
+            <CookingPot className="h-4 w-4 text-gray-400 mr-1" />
+            <span className="text-xs text-gray-300">Batch File Uploads</span>
+          </div>
+          <div className="flex items-center bg-gray-800/40 px-2 py-1 rounded-full">
+            <Tag className="h-4 w-4 text-purple-400 mr-1" />
+            <span className="text-xs text-gray-300">Custom URL Shorteners</span>
+          </div>
+          <div className="flex items-center bg-gray-800/40 px-2 py-1 rounded-full">
+            <Cog className="h-4 w-4 text-red-400 mr-1" />
+            <span className="text-xs text-gray-300">Anonymous Panel Control</span>
+          </div>
+        </div>
+      </header>
+
         
         <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
           <div className="mt-8 text-center w-full sm:w-auto">
