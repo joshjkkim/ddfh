@@ -86,7 +86,7 @@ export default function Home() {
   const [showTooltip, setShowTooltip] = useState("");
   const [isHovered, setIsHovered] = useState(false);
   const [autoDecryptEnabled, setAutoDecryptEnabled] = useState(false);
-  const [isShortUrl, setIsShortUrl] = useState(false)
+  const [isShortUrl, setIsShortUrl] = useState({ auto: false, decrypted: false })
   const [shortUrl, setShortUrl] = useState("");
   const [session, setSession] = useState(null)
   const [shareId, setShareId] = useState(null);
@@ -239,8 +239,6 @@ export default function Home() {
       if(autoDecryptEnabled && privateKey) {
         shareLink = `${publicShareLink}?decryptionKey=${privateKey}`;
       }
-      
-      console.log("HI", shortUrlKey, shareLink)
 
       const res = await fetch('/api/shortUrl', {
         method: 'POST',
@@ -256,7 +254,12 @@ export default function Home() {
       }
       const data = await res.json();
       setShortUrl(data.shortUrlKey);
-      setIsShortUrl(true);
+      if(autoDecryptEnabled) {
+        setIsShortUrl({auto: true})
+      } else {
+        setIsShortUrl({decypted: true});
+      }
+      
       
     } catch(e) {
 
@@ -265,6 +268,12 @@ export default function Home() {
   // Upload file with encryption
   const uploadFiles = async () => {
     if (files.length <= 0) return;
+
+    if (session && files.length > 10) {
+      return;
+    } else if (!session && files.length > 4) {
+      return;
+    }
     setIsUploading(true);
     simulateProgress();
   
@@ -292,7 +301,7 @@ export default function Home() {
         const s3Filename = `${share}-${file.file.name}`;
     
         const res = await fetch(
-          `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${totalFileSize}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}`
+          `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${totalFileSize}&fileamount=${files.length}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}`
         );
         if (!res.ok) {
           throw new Error("Failed to obtain pre-signed POST");
@@ -735,8 +744,8 @@ export default function Home() {
                   </div>
                   <button 
                     onClick={() => shortenUrl()}
-                    className={`text-sm px-3 py-1 rounded-full transition-all ease-in-out duration-200 bg-gray-800/50 text-cyan-400 ${isShortUrl ? "hover:bg-red-600" : "hover:bg-cyan-600"} hover:text-white`}
-                    disabled={isShortUrl}
+                    className={`text-sm px-3 py-1 rounded-full transition-all ease-in-out duration-200 bg-gray-800/50 text-cyan-400 ${isShortUrl.auto && isShortUrl.decrypted ? "hover:bg-red-600" : "hover:bg-cyan-600"} hover:text-white`}
+                    disabled={isShortUrl.auto && isShortUrl.decrypted}
                   >
                     Shorten URL?
                   </button>
