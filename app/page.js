@@ -227,6 +227,7 @@ export default function Home() {
   };
 
   const shortenUrl = async () => {
+    console.log(isShortUrl.auto, isShortUrl.decrypted)
     try {
       let shortUrlKey;
       if(!shortUrl || !shareId) {
@@ -255,9 +256,9 @@ export default function Home() {
       const data = await res.json();
       setShortUrl(data.shortUrlKey);
       if(autoDecryptEnabled) {
-        setIsShortUrl({auto: true})
+        setIsShortUrl({auto: true, decrypted: isShortUrl.decrypted})
       } else {
-        setIsShortUrl({decypted: true});
+        setIsShortUrl({auto: isShortUrl.auto, decrypted: true});
       }
       
       
@@ -764,7 +765,7 @@ export default function Home() {
                     </div>
                 </div>
                 
-                {isShortUrl && shortUrl && (
+                {(isShortUrl.auto || isShortUrl.decrypted) && shortUrl && (
                   <>
                     <button 
                       onClick={() =>
