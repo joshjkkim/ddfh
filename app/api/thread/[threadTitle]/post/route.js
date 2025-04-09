@@ -130,19 +130,20 @@ export async function POST(request, { params }) {
     await client.query(`UPDATE users SET last_post = NOW() WHERE id = $1`, [session.id]);
 
     // Compute total file size for the batch (if batch upload)
+    let rows = realFiles.rows || realFiles;
     let totalFileSize = null;
-    if (realFiles.rows.length > 0) {
-      totalFileSize = realFiles.rows.reduce(
+    if (rows.length > 0) {
+      totalFileSize = rows.reduce(
         (sum, file) => sum + parseInt(file.file_size, 10),
-        0
+        0 
       );
     }
 
     let fileNames = [];
-    if (realFiles.rows.length > 0) {
+    if (rows.length > 0) {
       fileNames = realFiles.rows.map(file => file.original_filename);
     }
-    console.log("FIle Size", totalFileSize)
+    console.log("File Size", totalFileSize)
     // Insert the post into the posts table.
     // For marketplace posts, is_marketplace is true and file-related fields are provided.
     const insertQuery = `

@@ -1,4 +1,7 @@
 import pool from "../../lib/db";
+import { cookies } from 'next/headers';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -8,6 +11,26 @@ export async function GET(request) {
   if (search.length > 100) {
     return new Response(JSON.stringify({ error: "Request is too long, 100 characters max" }), {
       status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const cookieStore = await cookies();
+  const token = await cookieStore.get('token')?.value;
+  
+  if (!token) {
+    return new Response(JSON.stringify({ error: "No session token found" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  let session;
+  try {
+    session = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    return new Response(JSON.stringify({ error: "Invalid token" }), {
+      status: 401,
       headers: { "Content-Type": "application/json" },
     });
   }

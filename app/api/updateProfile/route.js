@@ -153,12 +153,21 @@ export async function PUT(request) {
     `;
     const values = [newUsername, bio, avatarKey, bannerKey, oldUsername, email, discord, telegram, instagram, twitter, youtube];
     const result = await client.query(updateQuery, values);
+
+    
     client.release();
 
-    return new Response(JSON.stringify({ user: result.rows[0] }), {
+    const response = new Response(JSON.stringify({ user: result.rows[0] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
+    if(newUsername !== oldUsername) {
+      response.headers.set(
+        "Set-Cookie",
+        "token=; HttpOnly; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure"
+      );
+    }
+    return response;
   } catch (error) {
     console.error("Error updating profile:", error);
     return new Response(JSON.stringify({ error: error.message }), {

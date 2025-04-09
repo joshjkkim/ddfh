@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, LinkIcon, Key, FileText, AlertCircle, Upload } from "lucide-react";
 
 export default function CreateMarketPostPage() {
-  const { threadTitle } = useParams();
+  let { threadTitle } = useParams();
+  threadTitle = decodeURIComponent(threadTitle)
   const router = useRouter();
   const decodedThreadTitle = decodeURIComponent(threadTitle);
 

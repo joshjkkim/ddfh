@@ -227,7 +227,6 @@ export default function Home() {
   };
 
   const shortenUrl = async () => {
-    console.log(isShortUrl.auto, isShortUrl.decrypted)
     try {
       let shortUrlKey;
       if(!shortUrl || !shareId) {
