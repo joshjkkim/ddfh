@@ -7,7 +7,7 @@ const difficulty6Target = BigInt("0x000000ffffffffffffffffffffffffffffffffffffff
 
 // Calculate a custom target between them.
 // For example, using 75% of the gap between difficulty5 and difficulty6:
-const customTarget = difficulty5Target - ((difficulty5Target - difficulty6Target) * BigInt(4)) / BigInt(10);
+const customTarget = difficulty5Target - ((difficulty5Target - difficulty6Target) * BigInt(5)) / BigInt(10);
 
 export async function GET(request) {
   const challenge = randomBytes(16).toString('hex');

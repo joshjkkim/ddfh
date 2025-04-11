@@ -218,7 +218,7 @@ export default function SharePage() {
         <div className="bg-gray-800 bg-opacity-80 backdrop-blur-md rounded-xl shadow-2xl p-8 border border-gray-700">
           <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
             <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">Secure File Preview</h1>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">File Preview</h1>
               {shareId && (
                 <div className="mb-1">
                   <span className="text-gray-400">Share ID: </span>
