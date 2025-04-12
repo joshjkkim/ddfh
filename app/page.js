@@ -280,7 +280,8 @@ export default function Home() {
     try {
       const powRes = await fetch('/api/create-challenge');
       if (!powRes.ok) throw new Error('Failed to get challenge');
-      const { challenge, target } = await powRes.json();
+      const { challenge, target, powToken } = await powRes.json();
+      console.log(powToken)
       console.log(`Challenge received: ${challenge}, Target: ${target}`);
   
       const nonce = solveChallenge(challenge, target);
@@ -301,7 +302,7 @@ export default function Home() {
         const s3Filename = `${share}-${file.file.name}`;
     
         const res = await fetch(
-          `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${totalFileSize}&fileamount=${files.length}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}`
+          `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${totalFileSize}&fileamount=${files.length}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}&powToken=${encodeURIComponent(powToken)}`
         );
         if (!res.ok) {
           throw new Error("Failed to obtain pre-signed POST");
@@ -330,7 +331,6 @@ export default function Home() {
         // Optional delay for UI purposes
         await new Promise(resolve => setTimeout(resolve, 1000));
     
-        // 🔥 Step 6: Log Metadata to Postgres (Neon)
         const expirationTimestamp = new Date(Date.now() + expiry * 1000).toISOString();
         await fetch('/api/logFile', {
           method: 'POST',
@@ -356,7 +356,6 @@ export default function Home() {
       const exportedKey = await exportKey(key);
       
   
-      // 🔥 Step 7: Display Share Link and Keys
       setPublicShareLink(
         `https://ddfh.org/share/${share}`
       );

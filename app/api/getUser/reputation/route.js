@@ -1,9 +1,31 @@
 
 import pool from "../../../lib/db";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
 export async function GET(request) {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+
+  const cookieStore = await cookies();
+  const token = await cookieStore.get('token')?.value;
+  
+  if (!token) {
+    return new Response(JSON.stringify({ error: "No session token found" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  let session;
+  try {
+    session = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    return new Response(JSON.stringify({ error: "Invalid token" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   const client = await pool.connect();
 

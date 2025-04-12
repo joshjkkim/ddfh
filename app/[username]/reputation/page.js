@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Flag, MessageSquare } from "lucide-react";
 import Link from "next/link";
 
@@ -13,6 +13,7 @@ export default function ReputationPage() {
     const [avatar, setAvatar] = useState(null);
     const [banner, setBanner] = useState(null)
     const [userReputation, setUserReputation] = useState(null)
+    const router = useRouter();
 
     useEffect(() => {
         async function fetchUser() {

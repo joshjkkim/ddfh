@@ -349,52 +349,58 @@ export default function ProfilePage() {
                   User Posts
                 </h2>
                 
-                {userPosts && userPosts.length === 0 ? (
+                {!session ? (
                   <div className="text-center py-6">
                     <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400">No posts to display</p>
+                    <p className="text-gray-400">Login to see users posts</p>
                   </div>
                 ) : (
-                  <motion.div 
-                    className="space-y-4 max-h-[400px] overflow-y-auto"
-                  >
-                    {userPosts && userPosts.map((post, index) => (
-                      <motion.div 
-                        key={post.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ 
-                          delay: index * 0.1, 
-                          type: "spring", 
-                          stiffness: 300 
-                        }}
-                        className="bg-gray-700 p-4 rounded"
-                      >
-                        <Link href={`/thread/${username}/${post.parent_post_id ?? post.id}`}>
-                          <p>{post.content}</p>
-                          {post.share_file_key && (
-                            <motion.div 
-                              initial={{ scale: 0.9, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              className="bg-gray-700/50 rounded-lg p-3 mb-4 flex items-center"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                              </svg>
-                              <span className="text-gray-300 text-sm truncate">{post.share_file_key}</span>
-                            </motion.div>
-                          )}
-                          <p className="text-xs text-gray-400">
-                            Posted on {new Date(post.created_at).toLocaleDateString()}
-                          </p>
-                          <p className={`text-xs ${post.is_marketplace ? "text-green-500 hover:text-green-500" : "text-red-500"}}`}>
-                            {post.is_marketplace ? "Market" : "Reply"}
-                          </p>
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </motion.div>
+                  userPosts && userPosts.length === 0 ? (
+                    <div className="text-center py-6">
+                      <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400">No posts to display</p>
+                    </div>
+                  ) : (
+                    <motion.div className="space-y-4 max-h-[400px] overflow-y-auto">
+                      {userPosts && userPosts.map((post, index) => (
+                        <motion.div 
+                          key={post.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ 
+                            delay: index * 0.1, 
+                            type: "spring", 
+                            stiffness: 300 
+                          }}
+                          className="bg-gray-700 p-4 rounded"
+                        >
+                          <Link href={`/thread/${username}/${post.parent_post_id ?? post.id}`}>
+                            <p>{post.content}</p>
+                            {post.share_file_key && (
+                              <motion.div 
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="bg-gray-700/50 rounded-lg p-3 mb-4 flex items-center"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                <span className="text-gray-300 text-sm truncate">{post.share_file_key}</span>
+                              </motion.div>
+                            )}
+                            <p className="text-xs text-gray-400">
+                              Posted on {new Date(post.created_at).toLocaleDateString()}
+                            </p>
+                            <p className={`text-xs ${post.is_marketplace ? "text-green-500 hover:text-green-500" : "text-red-500"}`}>
+                              {post.is_marketplace ? "Market" : "Reply"}
+                            </p>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )
                 )}
+
               </div>
             </motion.div>
           )}
