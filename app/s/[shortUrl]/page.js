@@ -6,7 +6,7 @@ export default async function ShortForward({ params }) {
   const { shortUrl } = await params;
   
   // Fetch the full link from your API
-  const res = await fetch(`http://localhost:3000/api/shortUrl/forward?shorturlkey=${encodeURIComponent(shortUrl)}`);
+  const res = await fetch(`https://ddfh.org/api/shortUrl/forward?shorturlkey=${encodeURIComponent(shortUrl)}`);
   console.log(res)
   if (!res.ok) {
     // Optionally, handle error by redirecting to an error page
