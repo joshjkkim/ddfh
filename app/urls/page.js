@@ -50,7 +50,7 @@ export default function URLsPage() {
         }
       }
       fetchSession();
-    }, []);
+    }, [router]);
 
     useEffect(() => {
         async function fetchUser() {
@@ -88,7 +88,7 @@ export default function URLsPage() {
         if (session) {
           fetchUser();
         }
-      }, [session]);
+      }, [session, router]);
 
     useEffect(() => {
     async function fetchLinks() {
@@ -119,7 +119,7 @@ export default function URLsPage() {
     if (user) {
         fetchLinks();
     }
-    }, [user]);
+    }, [user, router]);
 
     const handleClaim = async () => {
     
