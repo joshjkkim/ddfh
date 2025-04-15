@@ -415,7 +415,7 @@ export default function URLsPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center">
               <LinkIcon className="w-8 h-8 mr-2 text-purple-500" />
-              {session.username}'s URLs
+              {session.username} URLs
             </h1>
             <div className="bg-gray-950 rounded-lg font-bold p-2 mt-2">
               <p className="text-gray-400">You have used preclaims: <span className="text-lg text-white bg-gray-800 p-1 rounded-lg">{user.num_short_keys} / {maxShortKeys}</span></p>
@@ -978,7 +978,7 @@ export default function URLsPage() {
           <LinkIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-medium text-gray-300">No URLs found</h3>
           <p className="text-gray-400 mt-2">
-              "Claim your first custom URL to get started!" 
+              Claim your first custom URL to get started!
           </p>
             <motion.button 
               whileHover={{ scale: 1.05 }}
