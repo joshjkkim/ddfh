@@ -4,21 +4,23 @@ import { redirect } from "next/navigation";
 
 export default async function ShortForward({ params }) {
   const { shortUrl } = await params;
-  console.log(shortUrl)
   
   // Fetch the full link from your API
-  const res = await fetch(`https://ddfh.org/api/shortUrl/forward?shorturlkey=${shortUrl}`);
+  const res = await fetch(`http://localhost:3000/api/shortUrl/forward?shorturlkey=${encodeURIComponent(shortUrl)}`);
+  console.log(res)
   if (!res.ok) {
     // Optionally, handle error by redirecting to an error page
     redirect(`/`)
   }
+
   const data = await res.json();
-  
+
   // Parse the returned full link into parts
-  const fullLink = new URL(data.full_link);
+  const fullLink = data.owner_id ? new URL(data.full_link + `?ownerId=${data.owner_id}`) : new URL(data.full_link);
   const path = fullLink.pathname;
   const search = fullLink.search;
   
   redirect(`${path}${search}`);
 
 }
+ 

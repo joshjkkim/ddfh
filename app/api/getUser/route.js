@@ -17,7 +17,7 @@ export async function GET(request) {
   try {
     if(!id) {
       const result = await client.query(
-        "SELECT username, role, created_at, reputation, post_count, bio, avatar_key, id, banner_key, email, discord, twitter, instagram, telegram, youtube FROM users WHERE username = $1",
+        "SELECT username, role, created_at, reputation, post_count, bio, avatar_key, id, banner_key, email, discord, twitter, instagram, telegram, youtube, num_short_keys FROM users WHERE username = $1",
         [username]
       );
   

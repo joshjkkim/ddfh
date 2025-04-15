@@ -11,11 +11,12 @@ export async function GET(request) {
     );
   }
 
+  console.log("HHHH")
   const client = await pool.connect()
 
   try {
       const result = await client.query(
-        "SELECT full_link FROM shortened_urls WHERE short_url_key = $1",
+        "SELECT owner_id, full_link FROM shortened_urls WHERE short_url_key = $1",
         [shortUrlKey]
       );
   
@@ -27,7 +28,7 @@ export async function GET(request) {
       }
   
       return new Response(
-        JSON.stringify(result.rows[0]),
+        JSON.stringify({ full_link: result.rows[0].full_link, owner_id: result.rows[0].owner_id }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
   } catch (err) {

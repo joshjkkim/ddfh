@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [loadingDownload, setLoadingDownload] = useState(false);
   const [error, setError] = useState(null);
+  const [deleteCount, setDeleteCount] = useState(0);
 
   // Helper to format remaining seconds into a human-friendly string
   const formatRemaining = (seconds) => {
@@ -39,6 +40,7 @@ export default function DashboardPage() {
         `/api/getFileMetadata?panelKey=${encodeURIComponent(panelKey)}`
       );
       if (!res.ok) {
+        setError("Failed to fetch metadata")
         throw new Error("Failed to fetch metadata.");
       }
       const data = await res.json();
@@ -52,7 +54,10 @@ export default function DashboardPage() {
 
   // Delete the file via backend API using panelKey
   const deleteFile = async () => {
-    if (!confirm("Are you sure you want to delete this file? This action cannot be undone.")) {
+    const deletes = (deleteCount + 1) % 2;
+    setDeleteCount(deletes);
+
+    if(deletes == 1) {
       return;
     }
     
@@ -64,6 +69,7 @@ export default function DashboardPage() {
         { method: "DELETE" }
       );
       if (!res.ok) {
+        setError("Failed to delete file")
         throw new Error("Failed to delete file.");
       }
       setMetadata(null);
@@ -201,10 +207,10 @@ export default function DashboardPage() {
                 </button>
                 <button
                   onClick={deleteFile}
-                  className="px-4 py-2 bg-red-600/80 hover:bg-red-700 rounded-lg inline-flex items-center transition-colors text-sm"
+                  className={`px-4 py-2 hover:scale-110 ${deleteCount ? "bg-red-600/80 hover:bg-red-700" : "bg-red-400 hover:bg-red-500"} rounded-lg inline-flex items-center transition-all duration-200 ease-out text-sm`}
                 >
                   <Trash2 className="mr-2 w-4 h-4" />
-                  Delete
+                  {deleteCount ? "Are you sure?" : "Delete File"}
                 </button>
               </div>
             </div>

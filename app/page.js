@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircleQuestion, MessageCircleWarning, Upload, Shield, Key, Share2, FileText, Lock, 
-  RefreshCw, Sparkles, Lollipop, Info, Clock, Eye, EyeClosed, User, UserCheck, Scissors, FolderCog, FileDigit, Tag, Cog, CookingPot } from 'lucide-react';
+  RefreshCw, Sparkles, Lollipop, Info, Clock, Eye, EyeClosed, User, UserCheck, Scissors, FolderCog, FileDigit, Tag, Cog, CookingPot, 
+  TriangleAlert} from 'lucide-react';
 import { generateAESKey, encryptData, exportKey } from "./lib/encrypt"; // adjust path accordingly
 import { buf as crc32Buffer } from "crc-32";
 import { useRouter } from "next/navigation";
@@ -91,6 +92,7 @@ export default function Home() {
   const [session, setSession] = useState(null)
   const [shareId, setShareId] = useState(null);
   const [totalFiles, setTotalFiles] = useState(0);
+  const [error, setError] = useState("")
 
   const router = useRouter();
 
@@ -104,7 +106,11 @@ export default function Home() {
             
           }
         } catch (err) {
-          console.error("Failed to fetch session:", err);
+          setError("Failed to fetch error!");
+
+          setTimeout(() => {
+            setError("")
+          }, 5000)
         }}
       fetchSession();
     }, []);
@@ -130,8 +136,18 @@ export default function Home() {
     if (droppedFiles && droppedFiles.length > 0) {
       // Check file limits based on session status
       if (session && totalFiles + droppedFiles.length > 10) {
+        setError("Users max file upload is 10 files");
+
+        setTimeout(() => {
+          setError("")
+        }, 5000)
         return;
       } else if (!session && totalFiles + droppedFiles.length > 4) {
+        setError("Anon max file upload is 4 files");
+
+        setTimeout(() => {
+          setError("")
+        }, 5000)
         return;
       }
       // Update total files count
@@ -155,8 +171,18 @@ export default function Home() {
     e.preventDefault();
     const uploadedFiles = e.target.files;
     if(session && totalFiles + uploadedFiles.length > 10) {
+      setError("User max file upload is 10 files");
+
+      setTimeout(() => {
+        setError("")
+      }, 5000)
       return;
     } else if (!session && totalFiles + uploadedFiles.length > 4) {
+      setError("Anon max file upload is 4 files");
+
+      setTimeout(() => {
+        setError("")
+      }, 5000)
       return
     }
     setTotalFiles(totalFiles + uploadedFiles.length)
@@ -175,7 +201,11 @@ export default function Home() {
   const handleFile = (uploadedFile) => {
     if (uploadedFile) {
       if (uploadedFile.size > MaxFileSize) {
-        alert("File size exceeds the 5 GB limit. Please choose a smaller file.");
+        setError("File size exceeds the 5 GB limit. Please choose a smaller file.");
+
+        setTimeout(() => {
+          setError("")
+        }, 5000)
         return;
       }
       const fileMetadata = {
@@ -250,7 +280,11 @@ export default function Home() {
         }),
       });
       if(!res.ok) {
-        throw new Error("Failed to shorten URL")
+        setError("Failed to shorten the URL");
+
+        setTimeout(() => {
+          setError("")
+        }, 5000)
       }
       const data = await res.json();
       setShortUrl(data.shortUrlKey);
@@ -279,13 +313,25 @@ export default function Home() {
   
     try {
       const powRes = await fetch('/api/create-challenge');
-      if (!powRes.ok) throw new Error('Failed to get challenge');
+      if (!powRes.ok) {
+        setError("Failed to get challenge!");
+
+        setTimeout(() => {
+          setError("")
+        }, 5000)
+      }
       const { challenge, target, powToken } = await powRes.json();
       console.log(powToken)
       console.log(`Challenge received: ${challenge}, Target: ${target}`);
   
       const nonce = solveChallenge(challenge, target);
-      if (!nonce) throw new Error('Failed to solve proof-of-work challenge');
+      if (!nonce) {
+        setError("Failed to solve challenge!");
+
+        setTimeout(() => {
+          setError("")
+        }, 5000)
+      }
       console.log(`Challenge solved with nonce: ${nonce}`);
   
       const key = await generateAESKey();
@@ -305,7 +351,11 @@ export default function Home() {
           `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${totalFileSize}&fileamount=${files.length}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}&powToken=${encodeURIComponent(powToken)}`
         );
         if (!res.ok) {
-          throw new Error("Failed to obtain pre-signed POST");
+          setError("Failed to obtain PreSigned POST!");
+
+          setTimeout(() => {
+            setError("")
+          }, 5000)
         }
 
         const presignedPost = await res.json();
@@ -323,7 +373,11 @@ export default function Home() {
           body: formData,
         });
         if (!uploadRes.ok) {
-          throw new Error("Failed to upload file to S3");
+          setError("Failed to upload file!");
+
+          setTimeout(() => {
+            setError("")
+          }, 5000)
         }
     
         const ivBase64 = btoa(String.fromCharCode(...new Uint8Array(iv)));
@@ -363,10 +417,13 @@ export default function Home() {
       setIsGeneratingKeys(false);
       setUploadComplete(true);
     } catch (error) {
-      console.error("Error during file upload:", error);
       setIsUploading(false);
       setIsGeneratingKeys(false);
-      alert("Failed to upload file. Please try again.");
+      setError("Failed to upload file. Please try again.");
+
+      setTimeout(() => {
+        setError("")
+      }, 5000)
     }
   };
   
@@ -442,6 +499,16 @@ export default function Home() {
         </div>
       </header>
 
+      {error && 
+        <div className="flex justify-center">
+          <div className="w-1/3 justify-center mb-6 p-4 bg-red-900 bg-opacity-30 rounded-lg border border-red-500 flex items-start shadow-lg">
+            <TriangleAlert className="w-5 h-5 text-red-300 mr-2"/>
+            <p className="text-red-300">{error}</p>
+          </div>
+        </div>
+      }
+      
+      
         
         <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
           <div className="mt-8 text-center w-full sm:w-auto">
@@ -637,9 +704,9 @@ export default function Home() {
                     <p className="text-2xl font-medium mb-2 text-cyan-200">Drop your files here</p>
                     <p className="text-gray-400">or click to browse</p>
                     <div className="mt-4 flex justify-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Up to 5GB each</span>
-                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Auto-expiry</span>
-                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Encrypted</span>
+                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Up to 5GB Total Batch</span>
+                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">4 Files For Anon, 10 For Users</span>
+                      <span className="px-3 py-1 rounded-full text-xs bg-gray-700/50 text-gray-300">Decryption and Panel Keys</span>
                     </div>
                   </div>
                 )}
@@ -768,7 +835,7 @@ export default function Home() {
                     <button 
                       onClick={() =>
                         copyToClipboard(
-                          `https://ddfh.org/short/${shortUrl}`,
+                          `https://ddfh.org/s/${shortUrl}`,
                           'short'
                         )
                       }
@@ -777,7 +844,7 @@ export default function Home() {
                       {copyStatus.short ? 'Copied!' : 'Copy'}
                     </button>
                     <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800 mt-4">
-                      https://ddfh.org/short/{shortUrl}
+                      https://ddfh.org/s/{shortUrl}
                     </div>
                   </>
                 )}

@@ -49,7 +49,6 @@ export async function GET(request) {
 
   const urls = await Promise.all(urlPromises);
   try {
-    console.log(urls)
     return new Response(JSON.stringify({ urls }), {
       status: 200,
       headers: { "Content-Type": "application/json" },

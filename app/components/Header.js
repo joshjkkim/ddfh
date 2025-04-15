@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lollipop, Menu, X, HandCoins, User, Sparkles } from "lucide-react";
+import { Lollipop, Menu, X, HandCoins, User, Sparkles, Cable } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export default function Header({ session }) {
@@ -106,6 +106,14 @@ export default function Header({ session }) {
                 className="flex items-center space-x-8"
               >
                 <Link 
+                  href={`/urls`} 
+                  className="flex items-center text-gray-300 hover:text-white transition-colors group"
+                >
+                  <Cable className="h-6 w-6 mr-1 group-hover:text-cyan-400 transition-colors" />
+                  <span>URLs</span>
+                </Link>
+
+                <Link 
                   href={`/${session.username}`} 
                   className="flex items-center text-gray-300 hover:text-white transition-colors group"
                 >
@@ -113,6 +121,7 @@ export default function Header({ session }) {
                   <span>{session.username}</span>
                 </Link>
               </motion.div>
+              
             ) : (
               <motion.div 
                 initial={{ opacity: 0, x: 20 }}

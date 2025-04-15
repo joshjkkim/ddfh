@@ -12,6 +12,8 @@ export default function SharePage() {
   const searchParams = useSearchParams();
   const shareId = params.shareId;
 
+  const ownerId = searchParams.get("ownerId") ?? "";
+
   const [decryptionKey, setDecryptionKey] = useState(searchParams.get("decryptionKey") ?? "");
   const [encryptedFileUrls, setEncryptedFileUrls] = useState([]);
   const [decryptedFiles, setDecryptedFiles] = useState([]); // Array of decrypted file objects
@@ -20,6 +22,7 @@ export default function SharePage() {
   const [decryptionProgress, setDecryptionProgress] = useState(0);
   const [decryptionSuccess, setDecryptionSuccess] = useState(false);
   const [isUrlFetching, setIsUrlFetching] = useState(false);
+  const [owner, setOwner] = useState("")
 
   const didDecrypt = useRef(false);
 
@@ -83,6 +86,26 @@ export default function SharePage() {
       fetchPresignedUrl();
     }
   }, [shareId]);
+
+  useEffect(() => {
+    if (ownerId) {
+      const fetchUser = async () => {
+        try {
+          const res = await fetch(`/api/getUser?id=${encodeURIComponent(ownerId)}`);
+          if (!res.ok) {
+            setError(`Error fetching Owner: ${res.status}`);
+            return;
+          }
+          const data = await res.json();
+          setOwner(data.username)
+        } catch (err) {
+          console.error("Error Fetching Owner:", err);
+          setError("Failed to get Owner. Please try again later.");
+        }
+      };
+      fetchUser();
+    }
+  }, [ownerId]);
 
   // Trigger decryption once decryptionKey and encryptedFileUrls are available
   useEffect(() => {
@@ -223,6 +246,18 @@ export default function SharePage() {
                 <div className="mb-1">
                   <span className="text-gray-400">Share ID: </span>
                   <span className="font-mono text-sm">{shareId}</span>
+                </div>
+              )}
+              {owner ? (
+                <div className="mb-1">
+                  <span className="text-gray-400">Owner: </span>
+                  <Link href={`/${owner}`}>
+                  <span className="font-mono text-md hover:text-blue-500 hover:underline transition-color duration-300">{owner}</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="mb-1">
+                  <span className="text-gray-400">Anonymous</span>
                 </div>
               )}
             </div>
