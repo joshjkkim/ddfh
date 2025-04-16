@@ -15,6 +15,11 @@ export default async function ShortForward({ params }) {
 
   const data = await res.json();
 
+  if(!data.full_link) {
+    redirect(`/${data.owner_username}`)
+    return;
+  }
+
   // Parse the returned full link into parts
   const fullLink = data.owner_id ? new URL(data.full_link + `?ownerId=${data.owner_id}`) : new URL(data.full_link);
   const path = fullLink.pathname;

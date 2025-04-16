@@ -11,7 +11,6 @@ export async function GET(request) {
     );
   }
 
-  console.log("HHHH")
   const client = await pool.connect()
 
   try {
@@ -26,9 +25,14 @@ export async function GET(request) {
           { status: 404, headers: { "Content-Type": "application/json" } }
         );
       }
+
+      const owner = await client.query(
+        `SELECT username FROM users WHERE id = $1`,
+        [result.rows[0].owner_id]
+      )
   
       return new Response(
-        JSON.stringify({ full_link: result.rows[0].full_link, owner_id: result.rows[0].owner_id }),
+        JSON.stringify({ full_link: result.rows[0].full_link, owner_id: result.rows[0].owner_id, owner_username: owner.rows[0].username }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
   } catch (err) {
