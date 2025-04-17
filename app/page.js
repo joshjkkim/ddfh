@@ -9,6 +9,7 @@ import { buf as crc32Buffer } from "crc-32";
 import { useRouter } from "next/navigation";
 import { solveChallenge } from './utils/solveChallenge';
 import formatFileSize from './utils/format';
+import Link from 'next/link';
 
 
 // ...
@@ -940,6 +941,17 @@ export default function Home() {
           )}
           
           <div className="mt-12 text-center text-gray-400 text-sm">
+
+          <p className="mt-2">
+          <Link href="https://t.me/dumdumFH">
+            <span className="w-1/2 p-2 hover:text-blue-500 hover:underline hover:bg-gray-900 rounded-lg shadow-lg transition-all duration-300 ease-out">
+            
+              Join The Telegram: t.me/dumdumFH
+              
+              </span>
+              </Link>
+            </p>
+            
            
             <p className="mt-2">
               © {new Date().getFullYear()} DDFH. All rights reserved.

@@ -2,11 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, LinkIcon, Key, FileText, AlertCircle, Upload } from "lucide-react";
+import { 
+  ArrowLeft, 
+  LinkIcon, 
+  Key, 
+  FileText, 
+  AlertCircle, 
+  Upload, 
+  Info, 
+  CheckCircle, 
+  Clipboard, 
+  Eye,
+  EyeOff
+} from "lucide-react";
 
 export default function CreateMarketPostPage() {
   let { threadTitle } = useParams();
-  threadTitle = decodeURIComponent(threadTitle)
+  threadTitle = decodeURIComponent(threadTitle);
   const router = useRouter();
   const decodedThreadTitle = decodeURIComponent(threadTitle);
 
@@ -20,6 +32,10 @@ export default function CreateMarketPostPage() {
   const [charCount, setCharCount] = useState(0);
   const [session, setSession] = useState(null);
   const [isContentOnly, setIsContentOnly] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const MAX_CHAR_COUNT = 500;
 
   useEffect(() => {
@@ -128,8 +144,11 @@ export default function CreateMarketPostPage() {
         return;
       }      
       
-      // On success, navigate back to the thread page
-      router.push(`/thread/${encodeURIComponent(threadTitle)}`);
+      setFormSubmitted(true);
+      setTimeout(() => {
+        // On success, navigate back to the thread page
+        router.push(`/thread/${encodeURIComponent(threadTitle)}`);
+      }, 1500);
     } catch (err) {
       setErrors((prev) => ({ ...prev, general: err.message }));
       setLoading(false);
@@ -138,6 +157,16 @@ export default function CreateMarketPostPage() {
 
   const handleCancel = () => {
     router.push(`/thread/${encodeURIComponent(threadTitle)}`);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   return (
@@ -151,9 +180,23 @@ export default function CreateMarketPostPage() {
           Back to {decodedThreadTitle}
         </button>
         
-        <div className="bg-gray-800 p-6 md:p-8 rounded-lg shadow-lg">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Create Marketplace Post</h1>
-          <p className="text-gray-400 mb-6">Share your file with the community in {decodedThreadTitle}</p>
+        <div className="bg-gray-800 p-6 md:p-8 rounded-lg shadow-lg border border-gray-700">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">Create Marketplace Post</h1>
+              <p className="text-gray-400">Share your file with the community in {decodedThreadTitle}</p>
+            </div>
+            <div className="bg-purple-600/20 rounded-full p-3">
+              <Upload size={24} className="text-purple-400" />
+            </div>
+          </div>
+          
+          {formSubmitted && (
+            <div className="mb-6 p-4 bg-green-900/30 border border-green-800 rounded-md flex items-start animate-pulse">
+              <CheckCircle size={20} className="text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+              <p className="text-green-400">Post created successfully! Redirecting...</p>
+            </div>
+          )}
           
           {errors.general && (
             <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-md flex items-start">
@@ -163,76 +206,122 @@ export default function CreateMarketPostPage() {
           )}
 
           {/* Toggle for Content-Only Post */}
-          <div className="mb-6 flex items-center">
+          <div className="mb-6 flex items-center p-3 bg-gray-700/50 rounded-lg border border-gray-600">
             <input
               type="checkbox"
               name="isContentOnly"
               id="isContentOnly"
               checked={isContentOnly}
               onChange={handleChange}
-              className="mr-2"
+              className="mr-2 h-4 w-4 accent-purple-600"
             />
-            <label htmlFor="isContentOnly" className="text-sm text-gray-300">
+            <label htmlFor="isContentOnly" className="text-sm text-gray-300 flex-1">
               Post content only (no file link or panel key)
             </label>
+            <div className="relative">
+              <button
+                type="button"
+                onMouseEnter={() => setTooltipVisible(true)}
+                onMouseLeave={() => setTooltipVisible(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <Info size={16} />
+              </button>
+              {tooltipVisible && (
+                <div className="absolute right-0 -bottom-20 w-64 p-3 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-10 text-xs text-gray-300">
+                  Choose this option if you just want to share text without linking to an external file.
+                </div>
+              )}
+            </div>
           </div>
           
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
               {!isContentOnly && (
                 <>
-                  <div>
-                    <label className="flex items-center text-sm font-medium mb-2">
+                  <div className="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                    <label className="flex items-center text-sm font-medium mb-3 text-purple-300">
                       <LinkIcon size={16} className="mr-2" />
                       Shareable File Link <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <input
-                      type="url"
-                      name="shareableLink"
-                      placeholder="https://your-storage-link.com/your-file"
-                      value={formData.shareableLink}
-                      onChange={handleChange}
-                      disabled={isContentOnly}
-                      className={`w-full p-3 rounded bg-gray-700 border ${
-                        errors.shareableLink ? "border-red-500" : "border-gray-600"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                    />
+                    <div className="relative">
+                      <input
+                        type="url"
+                        name="shareableLink"
+                        placeholder="https://your-storage-link.com/your-file"
+                        value={formData.shareableLink}
+                        onChange={handleChange}
+                        disabled={isContentOnly}
+                        className={`w-full p-3 pl-4 pr-12 rounded-md bg-gray-700 border ${
+                          errors.shareableLink ? "border-red-500" : "border-gray-600"
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                      />
+                      {formData.shareableLink && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(formData.shareableLink)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                          title="Copy link"
+                        >
+                          {linkCopied ? 
+                            <CheckCircle size={18} className="text-green-500" /> : 
+                            <Clipboard size={18} />}
+                        </button>
+                      )}
+                    </div>
                     {errors.shareableLink && (
-                      <p className="mt-1 text-sm text-red-500">{errors.shareableLink}</p>
+                      <p className="mt-2 text-sm text-red-500 flex items-center">
+                        <AlertCircle size={14} className="mr-1" />
+                        {errors.shareableLink}
+                      </p>
                     )}
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="mt-2 text-xs text-gray-400 flex items-start">
+                      <Info size={12} className="mr-1 mt-0.5 flex-shrink-0" />
                       Provide a public, accessible link to your file (S3, Dropbox, Google Drive, etc.)
                     </p>
                   </div>
                   
-                  <div>
-                    <label className="flex items-center text-sm font-medium mb-2">
+                  <div className="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                    <label className="flex items-center text-sm font-medium mb-3 text-purple-300">
                       <Key size={16} className="mr-2" />
                       Panel Key <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="panelKey"
-                      placeholder="Enter your panel key"
-                      value={formData.panelKey}
-                      onChange={handleChange}
-                      disabled={isContentOnly}
-                      className={`w-full p-3 rounded bg-gray-700 border ${
-                        errors.panelKey ? "border-red-500" : "border-gray-600"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="panelKey"
+                        placeholder="Enter your panel key"
+                        value={formData.panelKey}
+                        onChange={handleChange}
+                        disabled={isContentOnly}
+                        className={`w-full p-3 pl-4 pr-12 rounded-md bg-gray-700 border ${
+                          errors.panelKey ? "border-red-500" : "border-gray-600"
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                     {errors.panelKey && (
-                      <p className="mt-1 text-sm text-red-500">{errors.panelKey}</p>
+                      <p className="mt-2 text-sm text-red-500 flex items-center">
+                        <AlertCircle size={14} className="mr-1" />
+                        {errors.panelKey}
+                      </p>
                     )}
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="mt-2 text-xs text-gray-400 flex items-start">
+                      <Info size={12} className="mr-1 mt-0.5 flex-shrink-0" />
                       Required for verification purposes
                     </p>
                   </div>
                 </>
               )}
               
-              <div>
-                <label className="flex items-center text-sm font-medium mb-2">
+              <div className="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                <label className="flex items-center text-sm font-medium mb-3 text-purple-300">
                   <FileText size={16} className="mr-2" />
                   Description
                 </label>
@@ -242,18 +331,25 @@ export default function CreateMarketPostPage() {
                   value={formData.description}
                   onChange={handleChange}
                   rows={4}
-                  className={`w-full p-3 rounded bg-gray-700 border ${
+                  className={`w-full p-3 rounded-md bg-gray-700 border ${
                     errors.description ? "border-red-500" : "border-gray-600"
                   } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
                 ></textarea>
                 {errors.description && (
-                  <p className="mt-1 text-sm text-red-500">{errors.description}</p>
+                  <p className="mt-2 text-sm text-red-500 flex items-center">
+                    <AlertCircle size={14} className="mr-1" />
+                    {errors.description}
+                  </p>
                 )}
-                <div className="flex justify-between mt-1">
-                  <p className="text-xs text-gray-400">
+                <div className="flex justify-between mt-2">
+                  <p className="text-xs text-gray-400 flex items-start">
+                    <Info size={12} className="mr-1 mt-0.5 flex-shrink-0" />
                     Add details about your file to help others understand what you are sharing
                   </p>
-                  <p className={`text-xs ${charCount > MAX_CHAR_COUNT ? "text-red-500" : "text-gray-400"}`}>
+                  <p className={`text-xs font-mono ${
+                    charCount > MAX_CHAR_COUNT ? "text-red-500" : 
+                    charCount > MAX_CHAR_COUNT * 0.8 ? "text-yellow-500" : "text-gray-400"
+                  }`}>
                     {charCount}/{MAX_CHAR_COUNT}
                   </p>
                 </div>
@@ -269,8 +365,10 @@ export default function CreateMarketPostPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="py-3 px-5 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-medium transition-colors flex items-center justify-center"
+                  disabled={loading || formSubmitted}
+                  className={`py-3 px-5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md font-medium transition-colors flex items-center justify-center ${
+                    (loading || formSubmitted) ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
                 >
                   {loading ? (
                     <>
@@ -279,6 +377,11 @@ export default function CreateMarketPostPage() {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Creating Post...
+                    </>
+                  ) : formSubmitted ? (
+                    <>
+                      <CheckCircle size={18} className="mr-2" />
+                      Post Created!
                     </>
                   ) : (
                     <>

@@ -27,7 +27,7 @@ export async function GET(request) {
     // Increment the times_accessed column by 1 for the given shareId
     const result = await client.query(
       `UPDATE file_metadata
-       SET times_accessed = times_accessed + 1
+       SET times_accessed = times_accessed + 1, last_accessed = NOW()
        WHERE share_id = $1
        RETURNING times_accessed`,
       [shareId]

@@ -26,13 +26,20 @@ export async function GET(request) {
         );
       }
 
-      const owner = await client.query(
-        `SELECT username FROM users WHERE id = $1`,
-        [result.rows[0].owner_id]
-      )
-  
+      if(result.rows[0].owner_id) {
+        const owner = await client.query(
+          `SELECT username FROM users WHERE id = $1`,
+          [result.rows[0].owner_id]
+        )
+
+        return new Response(
+          JSON.stringify({ full_link: result.rows[0].full_link, owner_id: result.rows[0].owner_id, owner_username: owner.rows[0].username }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
-        JSON.stringify({ full_link: result.rows[0].full_link, owner_id: result.rows[0].owner_id, owner_username: owner.rows[0].username }),
+        JSON.stringify({ full_link: result.rows[0].full_link, owner_id: result.rows[0].owner_id, owner_username: "" }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
   } catch (err) {
