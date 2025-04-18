@@ -62,6 +62,13 @@ export async function POST(request) {
         { expiresIn: "1h" }
     );
 
+    await client.query(
+      `UPDATE users
+       SET last_online = NOW()
+       WHERE id = $1`,
+      [user.id]
+    );
+
     // Login successful – you could generate a session token or JWT here.
     return new Response(
       JSON.stringify({

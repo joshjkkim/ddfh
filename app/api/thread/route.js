@@ -33,7 +33,7 @@ export async function GET(request) {
 
     // Query posts for this thread
     const postsQuery = `
-      SELECT p.id, p.content, p.created_at, p.updated_at, p.share_file_key, p.file_size, p.original_filenames, u.username AS author_username, u.avatar_key AS author_pfp
+      SELECT p.id, p.title, p.content, p.created_at, p.updated_at, p.share_file_key, p.file_size, p.original_filenames, u.username AS author_username, u.avatar_key AS author_pfp
       FROM posts p
       JOIN users u ON p.author_id = u.id
       WHERE p.thread_id = $1 AND p.is_marketplace = TRUE

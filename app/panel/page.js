@@ -279,6 +279,17 @@ export default function DashboardPage() {
                     <p className="font-medium">{new Date(metadata.expiration_timestamp).toLocaleString()}</p>
                   </div>
                 </div>
+
+                <div className="flex items-start">
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700 mr-3 flex-shrink-0">
+                    <Calendar className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Last Accessed</p>
+                    <p className="font-medium">{new Date(metadata.last_accessed).toLocaleString()}</p>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>

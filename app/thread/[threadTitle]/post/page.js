@@ -16,6 +16,9 @@ import {
   EyeOff
 } from "lucide-react";
 
+const MAX_CHAR_COUNT = 500;
+const MAX_TITLE_COUNT = 50;
+
 export default function CreateMarketPostPage() {
   let { threadTitle } = useParams();
   threadTitle = decodeURIComponent(threadTitle);
@@ -26,17 +29,19 @@ export default function CreateMarketPostPage() {
     shareableLink: "",
     panelKey: "",
     description: "",
+    title: "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [charCount, setCharCount] = useState(0);
+  const [titleCharCount, setTitleCharCount] = useState(0);
   const [session, setSession] = useState(null);
   const [isContentOnly, setIsContentOnly] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const MAX_CHAR_COUNT = 500;
+
 
   useEffect(() => {
     async function fetchSession() {
@@ -57,28 +62,46 @@ export default function CreateMarketPostPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+  
     // Handle the checkbox toggle separately
     if (type === "checkbox" && name === "isContentOnly") {
       setIsContentOnly(checked);
       // If content-only mode is enabled, clear shareableLink and panelKey
       if (checked) {
-        setFormData((prev) => ({ ...prev, shareableLink: "", panelKey: "" }));
+        setFormData((prev) => ({
+          ...prev,
+          shareableLink: "",
+          panelKey: ""
+        }));
       }
       return;
     }
-
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    
+  
+    // Generic formData update
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  
     // Update character count for description
     if (name === "description") {
       setCharCount(value.length);
     }
-    
+  
+    // Update character count for title
+    if (name === "title") {
+      setTitleCharCount(value.length);
+    }
+  
     // Clear field-specific error when user starts typing
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: null
+      }));
     }
   };
+  
 
   const isValidUrl = (url) => {
     try {
@@ -111,6 +134,10 @@ export default function CreateMarketPostPage() {
     if (formData.description.length > MAX_CHAR_COUNT) {
       newErrors.description = `Description exceeds maximum of ${MAX_CHAR_COUNT} characters`;
     }
+
+    if (formData.title.length > MAX_TITLE_COUNT) {
+      newErrors.title = `Title exceeds maximum of ${MAX_TITLE_COUNT} characters`;
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -128,6 +155,7 @@ export default function CreateMarketPostPage() {
       shareableLink: isContentOnly ? null : formData.shareableLink,
       panelKey: isContentOnly ? null : formData.panelKey,
       description: formData.description,
+      title: formData.title,
     };
 
     try {
@@ -248,7 +276,7 @@ export default function CreateMarketPostPage() {
                       <input
                         type="url"
                         name="shareableLink"
-                        placeholder="https://your-storage-link.com/your-file"
+                        placeholder="https://ddfh.org/[shareId]"
                         value={formData.shareableLink}
                         onChange={handleChange}
                         disabled={isContentOnly}
@@ -275,9 +303,9 @@ export default function CreateMarketPostPage() {
                         {errors.shareableLink}
                       </p>
                     )}
-                    <p className="mt-2 text-xs text-gray-400 flex items-start">
+                    <p className="mt-2 text-xs text-red-400 flex items-start">
                       <Info size={12} className="mr-1 mt-0.5 flex-shrink-0" />
-                      Provide a public, accessible link to your file (S3, Dropbox, Google Drive, etc.)
+                      No shortened URLs Here
                     </p>
                   </div>
                   
@@ -319,24 +347,75 @@ export default function CreateMarketPostPage() {
                   </div>
                 </>
               )}
-              
+
               <div className="bg-gray-750 p-4 rounded-lg border border-gray-700">
-                <label className="flex items-center text-sm font-medium mb-3 text-purple-300">
+                <label
+                  htmlFor="title"
+                  className="flex items-center text-sm font-medium mb-2 text-purple-300"
+                >
+                  <FileText size={16} className="mr-2" />
+                  Title
+                </label>
+                <textarea
+                  id="title"
+                  name="title"
+                  placeholder="Enter a title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  required
+                  rows={2}                                // <-- shorter height
+                  className={`w-full p-2 rounded-md bg-gray-700 border ${
+                    errors.title ? "border-red-500" : "border-gray-600"
+                  } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-500 flex items-center">
+                    <AlertCircle size={14} className="mr-1" />
+                    {errors.title}
+                  </p>
+                )}
+                <div className="flex justify-between mt-2">
+                  <p className="text-xs text-gray-400 flex items-start">
+                    <Info size={12} className="mr-1 mt-0.5 flex-shrink-0" />
+                    Short headline for your file
+                  </p>
+                  <p
+                    className={`text-xs font-mono ${
+                      titleCharCount > MAX_TITLE_COUNT
+                        ? "text-red-500"
+                        : titleCharCount > MAX_TITLE_COUNT * 0.8
+                        ? "text-yellow-500"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {titleCharCount}/{MAX_TITLE_COUNT}
+                  </p>
+                </div>
+              </div>
+
+              {/* Description Field */}
+              <div className="bg-gray-750 p-4 rounded-lg border border-gray-700 mt-4">
+                <label
+                  htmlFor="description"
+                  className="flex items-center text-sm font-medium mb-2 text-purple-300"
+                >
                   <FileText size={16} className="mr-2" />
                   Description
                 </label>
                 <textarea
+                  id="description"
                   name="description"
-                  placeholder="Describe your file and what it contains (optional)"
+                  placeholder="Describe your file and what it contains"
                   value={formData.description}
                   onChange={handleChange}
+                  required
                   rows={4}
                   className={`w-full p-3 rounded-md bg-gray-700 border ${
                     errors.description ? "border-red-500" : "border-gray-600"
                   } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                ></textarea>
+                />
                 {errors.description && (
-                  <p className="mt-2 text-sm text-red-500 flex items-center">
+                  <p className="mt-1 text-sm text-red-500 flex items-center">
                     <AlertCircle size={14} className="mr-1" />
                     {errors.description}
                   </p>
@@ -346,10 +425,15 @@ export default function CreateMarketPostPage() {
                     <Info size={12} className="mr-1 mt-0.5 flex-shrink-0" />
                     Add details about your file to help others understand what you are sharing
                   </p>
-                  <p className={`text-xs font-mono ${
-                    charCount > MAX_CHAR_COUNT ? "text-red-500" : 
-                    charCount > MAX_CHAR_COUNT * 0.8 ? "text-yellow-500" : "text-gray-400"
-                  }`}>
+                  <p
+                    className={`text-xs font-mono ${
+                      charCount > MAX_CHAR_COUNT
+                        ? "text-red-500"
+                        : charCount > MAX_CHAR_COUNT * 0.8
+                        ? "text-yellow-500"
+                        : "text-gray-400"
+                    }`}
+                  >
                     {charCount}/{MAX_CHAR_COUNT}
                   </p>
                 </div>

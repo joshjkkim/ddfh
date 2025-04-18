@@ -7,7 +7,7 @@ export async function POST(request, { params }) {
   threadTitle = decodeURIComponent(threadTitle);
   console.log(threadTitle);
   // Parse JSON body for post data
-  let { shareableLink, panelKey, description } = await request.json();
+  let { shareableLink, panelKey, description, title } = await request.json();
 
   let shareId
   if(shareableLink && panelKey) {
@@ -148,9 +148,9 @@ export async function POST(request, { params }) {
     // For marketplace posts, is_marketplace is true and file-related fields are provided.
     const insertQuery = `
       INSERT INTO posts 
-        (thread_id, author_id, content, is_marketplace, share_file_key, file_size, original_filenames)
+        (thread_id, author_id, content, is_marketplace, share_file_key, file_size, original_filenames, title)
       VALUES 
-        ($1, $2, $3, $4, $5, $6, $7)
+        ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, content, created_at
     `;
     const values = [
@@ -160,7 +160,8 @@ export async function POST(request, { params }) {
       true, // is_marketplace flag set to true
       shareableLink, // may be null for content-only posts
       totalFileSize,
-      fileNames
+      fileNames,
+      title
     ];
     const result = await client.query(insertQuery, values);
 
@@ -168,6 +169,11 @@ export async function POST(request, { params }) {
     await client.query(
       `UPDATE users SET post_count = post_count + 1 WHERE username = $1`,
       [session.username]
+    );
+
+    await client.query(
+      `UPDATE threads SET updated_at = NOW() WHERE title = $1`,
+      [threadTitle]
     );
 
     // Return the post along with file details for the batch.

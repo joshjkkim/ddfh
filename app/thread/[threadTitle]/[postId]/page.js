@@ -274,6 +274,11 @@ export default function PostDetailPage() {
                   minute: '2-digit'
                 })}
               </div>
+              {post.title && (
+                <div className="bg-gray-700/50 rounded-lg text-2xl p-3 mb-4 flex items-center gap-2">
+                  <p className="font-bold text-center">{post.title}</p>
+                </div>
+              )}
               {post.share_file_key && (
                 <div className="bg-gray-700/50 rounded-lg p-3 mb-4 flex items-center">
                   <button onClick={() => copyToClipboard(post.share_file_key, 'link')} className="overflow-x-auto inline-flex">

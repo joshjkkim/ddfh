@@ -209,8 +209,8 @@ export default function ThreadPage() {
                           )}
                           <div className="flex items-start">
                             <CornerDownRight className="h-6 w-6 mr-1 text-blue-400 mt-1" />
-                            <p className="text-md leading-relaxed">
-                              {post.content}
+                            <p className="text-lg font-bold leading-relaxed">
+                              {post.title}
                             </p>
                           </div>
                         </div>

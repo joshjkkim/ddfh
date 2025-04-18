@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
   try {
     // Query for the post details using postId.
     const postQuery = `
-      SELECT p.id, p.thread_id, p.content, p.created_at, p.share_file_key, p.file_size, p.author_id, p.original_filenames, u.username AS author_username, u.avatar_key AS author_pfp
+      SELECT p.id, p.thread_id, p.content, p.title, p.created_at, p.share_file_key, p.file_size, p.author_id, p.original_filenames, u.username AS author_username, u.avatar_key AS author_pfp
       FROM posts p
       JOIN users u ON p.author_id = u.id
       WHERE p.id = $1 AND p.is_marketplace = TRUE
