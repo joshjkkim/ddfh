@@ -39,12 +39,51 @@ export default function SharePage() {
   // Utility: Determine file type based on file extension
   const getFileType = (filename) => {
     if (!filename) return "text";
-    const extension = filename.split('.').pop().toLowerCase();
-    if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(extension)) return "image";
-    if (extension === "pdf") return "pdf";
-    if (["txt", "md", "json", "csv", "log", "js", "jsx", "ts", "tsx", "html", "css", "py", "java", "c", "cpp"].includes(extension)) return "text";
+  
+    const extension = filename.split(".").pop().toLowerCase();
+  
+    // Images
+    if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(extension)) {
+      return "image";
+    }
+  
+    // PDF
+    if (extension === "pdf") {
+      return "pdf";
+    }
+  
+    // Video
+    if (["mp4", "webm", "ogg", "mov", "avi", "mkv"].includes(extension)) {
+      return "video";
+    }
+  
+    // Text‑based formats
+    if (
+      [
+        "txt",
+        "md",
+        "json",
+        "csv",
+        "log",
+        "js",
+        "jsx",
+        "ts",
+        "tsx",
+        "html",
+        "css",
+        "py",
+        "java",
+        "c",
+        "cpp",
+      ].includes(extension)
+    ) {
+      return "text";
+    }
+  
+    // Everything else
     return "binary";
   };
+  
 
   // Simulate decryption progress
   const simulateProgress = () => {
@@ -389,6 +428,19 @@ export default function SharePage() {
                           alt="Decrypted preview" 
                           className="max-w-full max-h-[70vh] object-contain rounded-md shadow-lg"
                         />
+                      </div>
+                    ) : file.fileType === "video" ? (
+                      <div className="flex justify-center p-4 bg-gradient-to-b from-gray-800 to-gray-900">
+                        <video
+                          controls
+                          className="max-w-full max-h-[70vh] rounded-md shadow-lg"
+                          src={file.previewUrl}
+                          // Optionally add poster, e.g. poster={file.posterUrl}
+                        >
+                          {/* In case you’d prefer <source> tags for multiple formats: */}
+                          {/* <source src={file.previewUrl} type="video/mp4" /> */}
+                          Your browser doesn’t support HTML5 video.
+                        </video>
                       </div>
                     ) : (
                       <div className="p-12 text-center">
