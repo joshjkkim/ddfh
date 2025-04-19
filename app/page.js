@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircleQuestion, MessageCircleWarning, Upload, Shield, Key, Share2, FileText, Lock, 
   RefreshCw, Sparkles, Lollipop, Info, Clock, Eye, EyeClosed, User, UserCheck, Scissors, FolderCog, FileDigit, Tag, Cog, CookingPot, 
-  TriangleAlert} from 'lucide-react';
+  TriangleAlert, PencilLine, CloudUpload} from 'lucide-react';
 import { generateAESKey, encryptData, exportKey } from "./lib/encrypt"; // adjust path accordingly
 import { buf as crc32Buffer } from "crc-32";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,9 @@ import Link from 'next/link';
 // ...
 // Constants
 const MaxFileSize = 5 * 1024 * 1024 * 1024; // 5 GB
+const maxAllowed = 2592000; // 1 month in seconds
+const minAllowed = 3600;    // 1 hour in seconds
+const maxChar = 100000;
 
 // Helper: format seconds into a friendly string
 function formatSeconds(seconds) {
@@ -34,8 +37,7 @@ function formatSeconds(seconds) {
 
 // Helper: compute maximum allowed expiry based on file size.
 function computeMaxExpiry(fileSize) {
-  const maxAllowed = 2592000; // 1 month in seconds
-  const minAllowed = 3600;    // 1 hour in seconds
+  
   if (fileSize >= MaxFileSize) return minAllowed;
   const ratio = fileSize / MaxFileSize;
   // Using a logarithmic curve
@@ -94,6 +96,10 @@ export default function Home() {
   const [shareId, setShareId] = useState(null);
   const [totalFiles, setTotalFiles] = useState(0);
   const [error, setError] = useState("")
+  const [mode, setMode] = useState("file")
+  const [pasteText, setPasteText] = useState("")
+  const [pasteChar, setPasteChar] = useState(0)
+  const [shouldUpload, setShouldUpload] = useState(false)
 
   const router = useRouter();
 
@@ -115,6 +121,13 @@ export default function Home() {
         }}
       fetchSession();
     }, []);
+
+  useEffect(() => {
+    if(shouldUpload) {
+      uploadFiles();
+      setShouldUpload(false);
+    }
+  }, [files, shouldUpload]);
 
   // Handle drag events
   const handleDrag = (e) => {
@@ -198,6 +211,11 @@ export default function Home() {
     }
   };
 
+  const handlePasteChange = (e) => {
+    setPasteText(e.target.value);
+    setPasteChar(e.target.value.length);
+  }
+
   // Process selected file and compute dynamic expiry
   const handleFile = (uploadedFile) => {
     if (uploadedFile) {
@@ -251,7 +269,9 @@ export default function Home() {
     const input = e.target.value;
     setExpiryInput(input);
     const parsed = parseDuration(input);
-    if (parsed !== null && files.length > 0) {
+    if(mode == "paste") {
+      setExpiry(parsed > maxAllowed ? allowedMax : parsed);
+    } else if (parsed !== null && files.length > 0) {
       const allowedMax = computeMaxExpiry(totalFileSize);
       setExpiry(parsed > allowedMax ? allowedMax : parsed);
     }
@@ -300,9 +320,35 @@ export default function Home() {
 
     }
   }
+
+  const uploadTextSnippet = () => {
+    const content = pasteText.trim();
+    if (!content) return;
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const snippetFile = new File([blob], "snippet.txt", {
+      type: "text/plain",
+    });
+
+    const wrapper = {
+      file: snippetFile,
+      size: snippetFile.size,
+    };
+
+    setFiles((prev) => [...prev, wrapper]);
+
+    setShouldUpload(true);
+  };
+  
   // Upload file with encryption
   const uploadFiles = async () => {
     if (files.length <= 0) return;
+
+    if (pasteChar > maxChar) {
+      setError("100,000 Character Max Limit for Pastes!")
+
+      return;
+    }
 
     if (session && files.length > 10) {
       return;
@@ -407,6 +453,7 @@ export default function Home() {
       setProgress(100);
       setIsUploading(false);
       setIsGeneratingKeys(true);
+      setPasteText("");
   
       const exportedKey = await exportKey(key);
       
@@ -417,10 +464,12 @@ export default function Home() {
       setPrivateKey(exportedKey);
       setIsGeneratingKeys(false);
       setUploadComplete(true);
+      
     } catch (error) {
       setIsUploading(false);
       setIsGeneratingKeys(false);
       setError("Failed to upload file. Please try again.");
+      console.log(error)
 
       setTimeout(() => {
         setError("")
@@ -436,19 +485,6 @@ export default function Home() {
     setTimeout(() => {
       setCopyStatus(prev => ({ ...prev, [type]: false }));
     }, 2000);
-  };
-
-  // Reset the form
-  const resetForm = () => {
-    setFile(null);
-    setUploadComplete(false);
-    setPublicShareLink('');
-    setPrivateKey('');
-    setPanelKey('');
-    setProgress(0);
-    setExpiry(3600);
-    setExpiryInput("1h");
-    setMaxAccesses(10);
   };
 
   return (
@@ -563,8 +599,39 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto relative">
-          {!uploadComplete ? (
+        <div className="justify-center items-center flex flex-col sm:flex-row justify-center gap-3 mb-4">
+          {isUploading || uploadComplete ? (
+            <button
+            onClick={() => setMode(mode == "file" ? "paste" : "file")}
+            className={`w-1/4 sm:min-w-[150px] inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r hover:scale-105 text-white rounded-full transition-all ease-in-out duration-200 from-red-800 to-red-600`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            disabled={uploadComplete || isUploading}
+          >
+            <strong>DISABLED</strong>
+            <MessageCircleWarning className="w-6 h-6 ml-2"/>
+          </button>
+          ) : (
+            <button
+              onClick={() => setMode(mode == "file" ? "paste" : "file")}
+              className={`w-3/8 sm:min-w-[150px] inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r hover:scale-105 text-white rounded-full transition-all ease-in-out duration-200 
+                ${mode == "file" ? "from-cyan-600 to-purple-800 hover:from-cyan-400 hover:to-purple-600" : "from-purple-800 to-cyan-600 hover:from-purple-600 hover:to-cyan-400"}`}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              disabled={uploadComplete || isUploading}
+            >
+              {mode === "file" ? (
+                <PencilLine className="h-5 w-5 mr-2" />
+              ) : (
+                <CloudUpload className="h-5 w-5 mr-2" />
+              )}
+              <strong>{mode === "file" ? "Switch to Paste" : "Switch to File Upload"}</strong>
+            </button>
+          )}
+        </div>
+
+        <div className="max-w-screen mx-auto relative">
+          {!uploadComplete && mode == "file" ? (
             <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-gray-700/50">
               <div 
                 className={`border-2 border-dashed rounded-lg p-10 text-center transition-all duration-300 ${dragActive 
@@ -700,7 +767,7 @@ export default function Home() {
                       </div>
                     </button>
                   </div>
-                ) : (
+                ) :  (
                   <div className="mt-4">
                     <p className="text-2xl font-medium mb-2 text-cyan-200">Drop your files here</p>
                     <p className="text-gray-400">or click to browse</p>
@@ -747,7 +814,113 @@ export default function Home() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : !uploadComplete && mode == "paste" ? (
+            <div className="w-full">
+              <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-gray-700/50">
+                <label
+                  htmlFor="paste-content"
+                  className="block text-sm font-medium text-purple-300 mb-2"
+                >
+                  Paste Your Text
+                </label>
+                <textarea
+                  id="paste-content"
+                  name="pasteContent"
+                  placeholder="Write or paste your text here…"
+                  value={pasteText}
+                  onChange={handlePasteChange}
+                  rows={10}
+                  className="w-full h-64 p-4 bg-gray-700/70 text-gray-100 placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  disabled={isUploading}
+                />
+                  <div className="p-2 text-purple-300">
+                    <p><span className="font-bold">Character Count: </span>{pasteChar} / {maxChar}</p>
+                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      
+                  <div>
+                    
+                    <label
+                      htmlFor="global-expiry"
+                      className="block text-sm font-medium text-gray-300 mb-2 flex items-center"
+                    >
+                      <Clock className="h-4 w-4 mr-1" />
+                      URL Expiry:
+                      <div 
+                        className="ml-1 relative"
+                        onMouseEnter={() => setShowTooltip("expiry")}
+                        onMouseLeave={() => setShowTooltip("")}
+                      >
+                        <Info className="h-3 w-3 text-gray-500" />
+                        {showTooltip === "expiry" && (
+                          <div className="absolute left-full ml-2 top-0 w-48 p-2 bg-gray-800 rounded-md text-xs z-10">
+                            Link will expire after this time. Format: 1h (hour), 1d (day), 30m (minutes).
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                    <input
+                      type="text"
+                      id="global-expiry"
+                      value={expiryInput}
+                      placeholder="e.g. 1h, 2d, 30m"
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={handleExpiryChange}  // This now updates the global expiry for the batch
+                      className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700/70 text-gray-100 px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="global-maxAccesses"
+                      className="block text-sm font-medium text-gray-300 mb-2 flex items-center"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Max Accesses:
+                      <div 
+                        className="ml-1 relative" 
+                        onMouseEnter={() => setShowTooltip("access")} 
+                        onMouseLeave={() => setShowTooltip("")}
+                      >
+                        <Info className="h-3 w-3 text-gray-500" />
+                        {showTooltip === "access" && (
+                          <div className="absolute left-full ml-2 top-0 w-48 p-2 bg-gray-800 rounded-md text-xs z-10">
+                            Maximum number of times these files can be accessed.
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                    <input
+                      type="number"
+                      id="global-maxAccesses"
+                      value={maxAccesses}
+                      placeholder="e.g. 5"
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setMaxAccesses(parseInt(e.target.value) || 999)}
+                      className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700/70 text-gray-100 px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={uploadTextSnippet}
+                  disabled={isUploading}
+                  className="mt-4 w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-800 hover:from-cyan-500 hover:to-purple-700 text-white font-medium rounded-full shadow-lg transition transform hover:scale-105 disabled:opacity-50"
+                >
+                  {isUploading ? (
+                    <>
+                      <RefreshCw className="animate-spin h-5 w-5 mr-2" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <CloudUpload className="h-5 w-5 mr-2" />
+                      Encrypt & Upload Text
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+           ) : (
             <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-gray-700/50">
             <div className="text-center mb-8">
               <div className="mx-auto h-20 w-20 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
