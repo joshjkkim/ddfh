@@ -1024,13 +1024,7 @@ export default function Home() {
                     <Scissors className="h-5 w-5 mr-2 text-cyan-400" />
                     <span className="font-medium">Shortened URL</span>
                   </div>
-                  <button 
-                    onClick={() => shortenUrl()}
-                    className={`text-sm px-3 py-1 rounded-full transition-all ease-in-out duration-200 bg-gray-800/50 text-cyan-400 ${isShortUrl.auto && isShortUrl.decrypted ? "hover:bg-red-600" : "hover:bg-cyan-600"} hover:text-white`}
-                    disabled={isShortUrl.auto && isShortUrl.decrypted}
-                  >
-                    Shorten URL?
-                  </button>
+                    
                     <div className="mt-4">
                       <label className="flex items-center text-sm font-medium mb-2">
                         <Share2 size={16} className="mr-2" />
@@ -1043,6 +1037,13 @@ export default function Home() {
                         placeholder="Enter your custom key"
                         className="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       />
+                      <button 
+                        onClick={() => shortenUrl()}
+                        className={`mt-2 text-sm px-3 py-1 rounded-full transition-all ease-in-out duration-200 bg-gray-800/50 text-cyan-400 ${isShortUrl.auto && isShortUrl.decrypted ? "hover:bg-red-600" : "hover:bg-cyan-600"} hover:text-white`}
+                        disabled={isShortUrl.auto && isShortUrl.decrypted}
+                      >
+                        Shorten URL?
+                    </button>
                     </div>
                 </div>
                 

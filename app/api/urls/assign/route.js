@@ -1,6 +1,7 @@
 import pool from "../../../lib/db"
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { Noto_Sans_Hebrew } from "next/font/google";
 
 export async function POST(request) {
     const body = await request.json();
@@ -90,8 +91,8 @@ export async function POST(request) {
         await client.query(`UPDATE shortened_urls SET updated_at = NOW() WHERE short_url_key = $1`, [shortUrlKey]);
         // Update the user's post count
         await client.query(
-        `UPDATE shortened_urls SET full_link = $1 WHERE short_url_key = $2`,
-        [shareableLink, shortUrlKey]
+        `UPDATE shortened_urls SET full_link = $1, share_id =$3 WHERE short_url_key = $2`,
+        [shareableLink, shortUrlKey, shareId]
         );
 
         return new Response(

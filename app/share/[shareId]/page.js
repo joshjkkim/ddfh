@@ -139,9 +139,10 @@ export default function SharePage() {
     if (ownerId) {
       const fetchUser = async () => {
         try {
-          const res = await fetch(`/api/getUser?id=${encodeURIComponent(ownerId)}`);
+          const res = await fetch(`/api/urls/is-owner?id=${encodeURIComponent(ownerId)}&shareId=${encodeURIComponent(shareId)}`);
           if (!res.ok) {
-            setError(`Error fetching Owner: ${res.status}`);
+            const data = await res.json();
+            setError(`Error fetching Owner: ${data.error}`);
             return;
           }
           const data = await res.json();
