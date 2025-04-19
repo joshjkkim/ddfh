@@ -36,6 +36,14 @@ function formatSeconds(seconds) {
   }
 }
 
+function sanitize(msg) {
+  // Ensure we always have a string
+  const text = String(msg);
+  // Strip out any `<` or `>` so injected tags won’t render
+  return text.replace(/[<>]/g, "");
+}
+
+
 // Helper: compute maximum allowed expiry based on file size.
 function computeMaxExpiry(fileSize) {
   
@@ -305,7 +313,7 @@ export default function Home() {
       let shareLink = publicShareLink;
 
       if(autoDecryptEnabled && privateKey) {
-        shareLink = `${publicShareLink}?decryptionKey=${privateKey}`;
+        shareLink = `${publicShareLink}#decryptionKey=${privateKey}`;
       }
 
       const res = await fetch('/api/shortUrl', {
@@ -399,7 +407,9 @@ export default function Home() {
       console.log(`Challenge solved with nonce: ${nonce}`);
   
       const key = await generateAESKey();
-      const share = Math.random().toString(36).substring(2, 15);
+      const bs = new Uint8Array(8);
+      window.crypto.getRandomValues(bs);
+      const share = Array.from(bs).map(b => b.toString(36).padStart(2, "0")).join("").substring(0, 12);
       setShareId(share)
       const generatedPanelKey = generatePanelKey();
       setPanelKey(generatedPanelKey);
@@ -410,12 +420,25 @@ export default function Home() {
         const computedChecksum = await computeCRC32Checksum(ciphertext);
         
         const s3Filename = `${share}-${file.file.name}`;
+        const fileSize    = file.file.size;        // use each file’s own size
+        const contentType = file.file.type || "application/octet-stream";
     
-        const res = await fetch(
-          `/api/getPresignedPost?filename=${encodeURIComponent(s3Filename)}&filesize=${totalFileSize}&fileamount=${files.length}&checksum=${computedChecksum}&expiry=${expiry}&nonce=${nonce}&challenge=${encodeURIComponent(challenge)}&powToken=${encodeURIComponent(powToken)}`
-        );
+        const params = new URLSearchParams({
+          filename:    s3Filename,
+          filesize:    fileSize.toString(),
+          contentType: contentType,
+          fileamount:  files.length.toString(),
+          checksum:    computedChecksum,
+          expiry:      expiry.toString(),
+          nonce:       nonce.toString(),
+          challenge:   challenge,
+          powToken:    powToken,
+        });
+      
+        const res = await fetch(`/api/getPresignedPost?${params.toString()}`);
         if (!res.ok) {
-          setError("Failed to obtain PreSigned POST!");
+          const data = await res.json();
+          setError("Failed to obtain PreSigned POST!", sanitize(data.error));
 
           setTimeout(() => {
             setError("")
@@ -486,7 +509,6 @@ export default function Home() {
       setIsUploading(false);
       setIsGeneratingKeys(false);
       setError("Failed to upload file. Please try again.");
-      console.log(error)
 
       setTimeout(() => {
         setError("")
@@ -965,7 +987,7 @@ export default function Home() {
                     onClick={() =>
                       copyToClipboard(
                         autoDecryptEnabled
-                          ? `${publicShareLink}?decryptionKey=${privateKey}`
+                          ? `${publicShareLink}#decryptionKey=${privateKey}`
                           : publicShareLink,
                         'link'
                       )
@@ -977,7 +999,7 @@ export default function Home() {
                 </div>
                 <div className="bg-gray-800/80 p-3 rounded-md text-sm font-mono break-all max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
                   {autoDecryptEnabled
-                          ? `${publicShareLink}?decryptionKey=${privateKey}`
+                          ? `${publicShareLink}#decryptionKey=${privateKey}`
                           : publicShareLink}
                 </div>
                 <p className="text-xs text-gray-400 mt-2 flex items-center">

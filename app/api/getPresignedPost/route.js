@@ -20,10 +20,70 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   let filename = searchParams.get("filename");
   const fileSizeParam = searchParams.get("filesize");
+  const contentType = searchParams.get("contentType");
   const fileAmountParam = searchParams.get("fileamount");
   const nonce = searchParams.get("nonce");
   const challenge = searchParams.get("challenge");
   const powToken = searchParams.get("powToken");
+
+  if (!contentType) {
+    return new Response(JSON.stringify({ error: "contentType is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // 2) Allow‑list of top‑level MIME categories
+  const ALLOWED_MIMES = {
+    image: [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/bmp",
+      "image/tiff",
+      "image/svg+xml"
+    ],
+    video: [
+      "video/mp4",
+      "video/webm",
+      "video/ogg",
+      "video/quicktime",   // .mov
+      "video/x-matroska"   // .mkv
+    ],
+    audio: [
+      "audio/mpeg",        // .mp3
+      "audio/wav",         // .wav
+      "audio/ogg",
+      "audio/flac",
+      "audio/aac"
+    ],
+    pdf: [
+      "application/pdf"
+    ],
+    text: [
+      "text/plain",
+      "text/markdown",
+      "application/json",
+      "text/csv",
+      "text/xml",
+      "application/xml"
+    ],
+    archive: [
+      "application/zip",
+      "application/x-tar",
+      "application/gzip",
+      "application/x-7z-compressed",
+      "application/x-rar-compressed"
+    ]
+  };
+  const allAllowed = Object.values(ALLOWED_MIMES).flat();
+  if (!allAllowed.includes(contentType)) {
+    return new Response(JSON.stringify({ error: "Unsupported MIME type" }), {
+      status: 415,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   // Validate essential parameters.
   if (!filename) {

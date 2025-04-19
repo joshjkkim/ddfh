@@ -14,7 +14,7 @@ export default function SharePage() {
 
   const ownerId = searchParams.get("ownerId") ?? "";
 
-  const [decryptionKey, setDecryptionKey] = useState(searchParams.get("decryptionKey") ?? "");
+  const [decryptionKey, setDecryptionKey] = useState("");
   const [encryptedFileUrls, setEncryptedFileUrls] = useState([]);
   const [decryptedFiles, setDecryptedFiles] = useState([]); // Array of decrypted file objects
   const [error, setError] = useState(null);
@@ -25,6 +25,15 @@ export default function SharePage() {
   const [owner, setOwner] = useState("")
 
   const didDecrypt = useRef(false);
+
+  useEffect(() => {
+      const hash = window.location.hash;
+      if (hash.startsWith("#")) {
+        const params = new URLSearchParams(hash.slice(1));
+        const key = params.get("decryptionKey");
+        if (key) setDecryptionKey(key);
+      }
+    }, []);
 
   // Helper: Convert Base64 string to Uint8Array
   const getIVFromBase64 = (base64) => {
