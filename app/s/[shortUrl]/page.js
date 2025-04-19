@@ -22,10 +22,12 @@ export default async function ShortForward({ params }) {
 
   // Parse the returned full link into parts
   const fullLink = data.owner_id ? new URL(data.full_link + `?ownerId=${data.owner_id}`) : new URL(data.full_link);
+  console.log(data.full_link, fullLink)
   const path = fullLink.pathname;
   const search = fullLink.search;
+  const hash = fullLink.hash || ""
   
-  redirect(`${path}${search}`);
+  redirect(`${path}${search}${hash}`);
 
 }
  
