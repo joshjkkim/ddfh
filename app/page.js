@@ -18,6 +18,7 @@ const MaxFileSize = 5 * 1024 * 1024 * 1024; // 5 GB
 const maxAllowed = 2592000; // 1 month in seconds
 const minAllowed = 3600;    // 1 hour in seconds
 const maxChar = 100000;
+const DEFAULT_MAX = 999999;
 
 // Helper: format seconds into a friendly string
 function formatSeconds(seconds) {
@@ -82,6 +83,7 @@ export default function Home() {
   const [totalFileSize, setTotalFileSize] = useState(0)
   const [progress, setProgress] = useState(0);
   const [maxAccesses, setMaxAccesses] = useState(10);
+  const [maxAccessesInput, setMaxAccessesInput] = useState("");
   const [copyStatus, setCopyStatus] = useState({
     link: false,
     key: false,
@@ -215,6 +217,21 @@ export default function Home() {
     setPasteText(e.target.value);
     setPasteChar(e.target.value.length);
   }
+
+  const handleMaxAccessesChange = (e) => {
+    const raw = e.target.value;
+  
+    setMaxAccessesInput(raw);
+  
+    if (raw === "") {
+      return;
+    }
+  
+    const parsed = parseInt(raw, 10);
+    if (!isNaN(parsed)) {
+      setMaxAccesses(parsed);
+    }
+  };
 
   // Process selected file and compute dynamic expiry
   const handleFile = (uploadedFile) => {
@@ -726,12 +743,12 @@ export default function Home() {
                           </div>
                         </label>
                         <input
-                          type="number"
+                          type="text"
                           id="global-maxAccesses"
-                          value={maxAccesses}
-                          placeholder="e.g. 5"
+                          value={maxAccessesInput}
+                          placeholder="Default: 10"
                           onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => setMaxAccesses(parseInt(e.target.value) || 999)}
+                          onChange={handleMaxAccessesChange}
                           className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700/70 text-gray-100 px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                         />
                       </div>
@@ -742,6 +759,9 @@ export default function Home() {
                       Maximum allowed expiry for the batch is{" "}
                       {formatSeconds(computeMaxExpiry(totalFileSize))}
                       {expiry !== null && <span> Current setting: {formatSeconds(expiry)}.</span>}
+                    </p>
+                    <p className="text-xs text-gray-400 mb-4">
+                      Greatest Amount of Accesses is: {DEFAULT_MAX}
                     </p>
 
                     <button
