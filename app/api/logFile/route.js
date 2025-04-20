@@ -33,7 +33,6 @@ export async function POST(request) {
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
-    
     // If the check passes, proceed with the insert.
     const res = await client.query(
       `INSERT INTO file_metadata (share_id, original_filename, s3_key, file_size, expiration_timestamp, panel_key, times_accessed, max_accesses, iv)
@@ -50,6 +49,18 @@ export async function POST(request) {
         body.maxAccesses,
         body.iv
       ]
+    );
+
+    await client.query(
+      `UPDATE upload_usage
+         SET num_bytes = num_bytes + $1
+       WHERE date_start = (
+             SELECT date_start
+               FROM upload_usage
+              ORDER BY date_start DESC
+              LIMIT 1
+       )`,
+      [ body.fileSize ]          // bytes just accepted
     );
     await client.release();
     return new Response(JSON.stringify({ id: res.rows[0].id }), {
