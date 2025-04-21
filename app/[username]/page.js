@@ -6,7 +6,8 @@ import Image from "next/image";
 import { 
   User, MessageSquare, Clock, Diff, Flag, 
   Settings, Shield, IdCard,
-  LogOut
+  LogOut,
+  Mail
 } from "lucide-react";
 import { FaYoutube, FaTwitter, FaInstagram, FaDiscord, FaTelegramPlane } from 'react-icons/fa';
 import Header from "../components/Header";
@@ -423,7 +424,7 @@ export default function ProfilePage() {
                 <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                   <h2 className="text-xl font-bold mb-4">Connected Accounts</h2>
                   
-                  { (user.youtube || user.twitter || user.instagram || user.discord || user.telegram || user.youtube) ? (
+                  { (user.youtube || user.twitter || user.instagram || user.discord || user.telegram || user.email) ? (
                     <motion.div 
                       initial="hidden"
                       animate="visible"
@@ -463,7 +464,54 @@ export default function ProfilePage() {
                           <span className="text-gray-300">{user.twitter}</span>
                         </motion.div>
                       )}
-                      {/* [Other social accounts remain similar] */}
+                       { user.email && (
+                        <motion.div 
+                          variants={{
+                            hidden: { opacity: 0, x: -20 },
+                            visible: { opacity: 1, x: 0 }
+                          }}
+                          className="flex items-center"
+                        >
+                          <Mail className="w-6 h-6 mr-2 text-blue-400" />
+                          <span className="text-gray-300">{user.email}</span>
+                        </motion.div>
+                      )}
+                       { user.instagram && (
+                        <motion.div 
+                          variants={{
+                            hidden: { opacity: 0, x: -20 },
+                            visible: { opacity: 1, x: 0 }
+                          }}
+                          className="flex items-center"
+                        >
+                          <FaInstagram className="w-6 h-6 mr-2 text-blue-400" />
+                          <span className="text-gray-300">{user.instagram}</span>
+                        </motion.div>
+                      )}
+                       { user.discord && (
+                        <motion.div 
+                          variants={{
+                            hidden: { opacity: 0, x: -20 },
+                            visible: { opacity: 1, x: 0 }
+                          }}
+                          className="flex items-center"
+                        >
+                          <FaDiscord className="w-6 h-6 mr-2 text-blue-400" />
+                          <span className="text-gray-300">{user.discord}</span>
+                        </motion.div>
+                      )}
+                       { user.telegram && (
+                        <motion.div 
+                          variants={{
+                            hidden: { opacity: 0, x: -20 },
+                            visible: { opacity: 1, x: 0 }
+                          }}
+                          className="flex items-center"
+                        >
+                          <FaTelegramPlane className="w-6 h-6 mr-2 text-blue-400" />
+                          <span className="text-gray-300">{user.telegram}</span>
+                        </motion.div>
+                      )}
                     </motion.div>
                   ) : (
                     <div className="text-center py-6">
