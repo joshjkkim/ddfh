@@ -938,7 +938,7 @@ export default function Home() {
                       value={maxAccesses}
                       placeholder="e.g. 5"
                       onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => setMaxAccesses(parseInt(e.target.value) || 999)}
+                      onChange={handleMaxAccessesChange}
                       className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700/70 text-gray-100 px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     />
                   </div>
