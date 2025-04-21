@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation";
-import { Flag, MessageSquare } from "lucide-react";
+import { Flag, MessageSquare, TrashIcon } from "lucide-react";
 import Link from "next/link";
 
 export default function ReputationPage() {
@@ -13,7 +13,24 @@ export default function ReputationPage() {
     const [avatar, setAvatar] = useState(null);
     const [banner, setBanner] = useState(null)
     const [userReputation, setUserReputation] = useState(null)
+    const [session, setSession] = useState(null);
     const router = useRouter();
+
+    useEffect(() => {
+        async function fetchSession() {
+          try {
+            const res = await fetch("/api/getSession");
+            if (res.ok) {
+              const data = await res.json();
+              setSession(data.session);
+              
+            }
+          } catch (err) {
+            console.error("Failed to fetch session:", err);
+          }
+        }
+        fetchSession();
+      }, [username]);
 
     useEffect(() => {
         async function fetchUser() {
@@ -81,6 +98,32 @@ export default function ReputationPage() {
         }
     }, [user]);
 
+    const handleDeleteReputation = async () => {
+        console.log("moew")
+        if(session.username && username) {
+            try {
+                const res = await fetch('/api/modify-reputation/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        giver: session.username,
+                        recipient: username,
+                    }),
+                  });
+
+                if(!res.ok) {
+                    setError("Failed to delete reputation");
+                    return;
+                }
+            } catch(err) {
+                setError(err.message)
+            } finally {
+                console.log("hi")
+                router.push(`/${username}`)
+            }
+        }
+    }
+
     
     if (loading) {
         return (
@@ -143,7 +186,7 @@ export default function ReputationPage() {
                     </div>
                 ) : (
                     <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                        {userReputation && userReputation.map((reputation) => (
+                        {session && userReputation && userReputation.map((reputation) => (
                             <div 
                                 key={reputation.giver_username} 
                                 className="bg-gray-800/60 backdrop-blur-sm rounded-lg p-4 border border-white/10"
@@ -152,10 +195,24 @@ export default function ReputationPage() {
                                     <Link href={`/${reputation.giver_username}`}>
                                     <p className={`text-lg font-semibold text-purple-300`}><span className={`${reputation.amount >= 0 ? "text-green-400" : "text-red-400"}`}>{reputation.amount}</span> rep from <span className="bg-gray-600 p-1 rounded-lg hover:bg-cyan-800 text-purple-400">{reputation.giver_username}</span></p>
                                     </Link>
-                                
+
+                                    
+                                    <div className="items-end flex flex-col">
+                                    {session.username === reputation.giver_username && 
+                                        <button 
+                                        className="hover:bg-gray-800/40 p-2 rounded-lg transition-color duration-400 ease-out"
+                                        onClick={() => handleDeleteReputation()} 
+                                        >
+                                            <TrashIcon className="w-5 h-5 text-red-500 mb-2 hover:text-red-700 hover:scale-120 transition-all duration-400 ease-out"/> 
+                                        </button>
+                                    }
                                     <p className="text-xs text-gray-400">
                                         Date Given: {new Date(reputation.date_given).toLocaleDateString()}
                                     </p>
+
+                                    </div>
+
+                                   
                                 </div>
                                 {reputation.message && (
                                     <div className="bg-gray-700/50 rounded-lg p-3 mb-2 flex items-center">
