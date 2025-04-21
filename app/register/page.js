@@ -183,7 +183,7 @@ export default function RegisterPage() {
           <div>
             <div className="bg-yellow-700 p-4 rounded-md mb-4">
               <h2 className="text-white font-bold mb-2">Important: Save Your Recovery Seed Phrase</h2>
-              <p className="text-white break-all">{seedPhrase}</p>
+              <p className="text-white break-all bg-gray-800 p-2 rounded-lg text-lg shadow-lg hover:bg-gray-700">{seedPhrase}</p>
               <p className="text-white mt-2">
                 This is the only time this seed phrase will be shown. Please store it securely – if you lose it, you wont be able to recover your account.
               </p>
