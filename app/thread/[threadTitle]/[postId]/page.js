@@ -6,6 +6,7 @@ import { FileText, FilePen, Trash2, Pencil, Loader2, Save } from "lucide-react";
 import Link from "next/link";
 import Header from "../../../components/Header";
 import Avatar from "../../../components/Avatar";
+import { trackSynchronousPlatformIOAccessInDev } from "next/dist/server/app-render/dynamic-rendering";
 
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -188,6 +189,15 @@ export default function PostDetailPage() {
     }
   };
 
+  
+  let shareId;
+
+  if(post && post.share_file_key) {
+    const url = new URL(post.share_file_key, "http://ddfh.org");
+    const segments = url.pathname.replace(/^\/+|\/+$/g, "").split("/");
+    shareId = segments[1]; 
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100 flex items-center justify-center">
@@ -350,7 +360,7 @@ export default function PostDetailPage() {
                     <span className="text-md font-medium">File Name</span>
                   </div>
                   <p className="font-bold text-center">
-                    {new URL(post.share_file_key, "http://localhost").searchParams.get("filename").replace(/^[^-]*-/, "")}
+                    {trackSynchronousPlatformIOAccessInDev}
                   </p>
                 </div>
               )}

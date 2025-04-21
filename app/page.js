@@ -943,6 +943,28 @@ export default function Home() {
                     />
                   </div>
                 </div>
+                
+                {isUploading &&
+                  <div>
+                  <div className="flex items-center mb-2">
+                    <RefreshCw className="animate-spin h-5 w-5 mr-3 text-cyan-400" />
+                    <span>{progress < 50 ? "Encrypting data locally..." : "Uploading securely..."}</span>
+                  </div>
+                  
+                  <div className="w-full bg-gray-800 rounded-full h-2.5 mb-4 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-purple-500 h-2.5 rounded-full transition-all duration-300" 
+                      style={{ width: `${progress}%` }} 
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>{progress < 50 ? "Encrypting" : "Uploading"}</span>
+                    <span>{progress}%</span>
+                  </div>
+                </div>
+                }
+
                 <button
                   onClick={uploadTextSnippet}
                   disabled={isUploading}
