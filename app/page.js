@@ -418,8 +418,10 @@ export default function Home() {
         const fileBuffer = await file.file.arrayBuffer();
         const { ciphertext, iv } = await encryptData(key, fileBuffer);
         const computedChecksum = await computeCRC32Checksum(ciphertext);
+
+        const fileName = file.file.name.replace(/ /g, "_");;
         
-        const s3Filename = `${share}-${file.file.name}`;
+        const s3Filename = `${share}-${fileName}`;
         const fileSize    = file.file.size;        // use each file’s own size
         const contentType = file.file.type || "application/octet-stream";
     
@@ -478,7 +480,7 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             shareId: share,
-            originalFilename: file.file.name,
+            originalFilename: fileName,
             s3Key: s3Filename,
             iv: ivBase64,
             fileSize: file.size,
@@ -703,7 +705,7 @@ export default function Home() {
                     <div className="space-y-4">
                       {files.map((file, index) => (
                         <div key={index} className="border p-4 rounded">
-                          <p className="text-xl font-medium text-cyan-300">{file.file.name}</p>
+                          <p className="text-xl font-medium text-cyan-300">{file.file.name.replace(/ /g, "_")}</p>
                           <p className="text-gray-400">{formatFileSize(file.file.size)}</p>
                         </div>
                       ))}
