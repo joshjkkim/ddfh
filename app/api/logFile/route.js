@@ -4,7 +4,7 @@ const MaxFileSize = 5 * 1024 * 1024 * 1024; // 5GB
 
 // Function that computes the allowed expiry (in seconds) based on file size
 function computeMaxExpiry(fileSize) {
-  const maxAllowed = 2592000; // 1 month in seconds
+  const maxAllowed = 31560000; // 1 month in seconds
   const minAllowed = 3600;    // 1 hour in seconds
   if (fileSize >= MaxFileSize) return minAllowed;
   const ratio = fileSize / MaxFileSize;

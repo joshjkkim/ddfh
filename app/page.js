@@ -15,7 +15,7 @@ import Link from 'next/link';
 // ...
 // Constants
 const MaxFileSize = 5 * 1024 * 1024 * 1024; // 5 GB
-const maxAllowed = 2592000; // 1 month in seconds
+const maxAllowed = 31560000; // 1 month in seconds
 const minAllowed = 3600;    // 1 hour in seconds
 const maxChar = 100000;
 const DEFAULT_MAX = 999999;
